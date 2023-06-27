@@ -1,4 +1,5 @@
 using Plots, Distributions, LaTeXStrings, BenchmarkTools, DifferentialEquations,StaticArrays
+plotly()
 # Parameters
 const V_na = 55.0;
 const V_k = -77.0;
@@ -64,6 +65,12 @@ function channel_states_euler(N_tot, dt, t_tot, p)
     H[1] = round(rand()*N_tot); 
 
     for i in 2:total_steps
+
+        if i >= 200000
+            I_ext=20;
+        end
+
+
         #Probabilities definition
         #N0[i] = N0[i-1] + rand(Binomial(N1[i-1],βₙ(V[i-1])*dt)) - rand(Binomial(N0[i-1],4*αₙ(V[i-1])*dt)) 
         # N0[i] = N0[i-1] +p1c-p0o
@@ -102,110 +109,220 @@ function channel_states_euler(N_tot, dt, t_tot, p)
         # H[i] = H[i-1] + rand(Binomial(N_tot .-H[i-1],αₕ(V[i-1])*dt)) - rand(Binomial(H[i-1],βₕ(V[i-1])*dt))
         # H[i] = H[i-1] + pho - phc
         pho = αₕ(V[i-1])*dt;
-        # phc= 1 - pho;
-        phc = βₕ(V[i-1])*dt;
+        phc= 1 - pho;
 
- 
-        # Evolucio canals 
-        if rand()<pn0o
+        if pn0o>0.1
+            print("pn0o="*string(pn0o))
+        end
+        if pn1o>0.1
+            print("pn1o="*string(pn1o))
+        end
+        if pn1c>0.1
+            print("pn1c="*string(pn1c))
+        end
+        if pn2o>0.1
+            print("pn2o="*string(pn2o))
+        end
+        if pn2c>0.1
+            print("pn2c="*string(pn2c))
+        end
+        if pn3o>0.1
+            print("pn3o="*string(pn3o))
+        end
+        if pn3c>0.1
+            print("pn3c="*string(pn3c))
+        end
+        if pn4c>0.1
+            print("pn4c="*string(pn4c))
+        end
+        if pm0o>0.1
+            print("pm0o="*string(pm0o))
+        end
+        if pm1o>0.1
+            print("pm1o="*string(pm1o))
+        end
+        if pm1c>0.1
+            print("pm1c="*string(pm1c))
+        end
+        if pm2o>0.1
+            print("pm2o="*string(pm2o))
+        end
+        if pm2c>0.1
+            print("pm2c="*string(pm2c))
+        end
+        if pm3c>0.1
+            print("pm3c="*string(pm3c))
+        end
+        if phc>0.1
+            print("phc="*string(phc))
+        end
+        if pho>0.1
+            print("pho="*pho)            
+        end
+
+
+        # phc = βₕ(V[i-1])*dt;
+
+        # Evolucio canals N
+        if rand(Uniform(0,1))<pn0o
             N0[i] = N0[i-1] - 1;
-            N1[i] = N1[i-1] + 1; #?? aquests no hi són al seu codi
+            N1[i] = N1[i-1] + 1; 
         end        
-        if rand()<pn1c 
+        if rand(Uniform(0,1))<pn1c 
             N1[i] = N1[i-1]- 1;
             N0[i] = N0[i-1] + 1;
         end
-        if rand()<pn1o
+        if rand(Uniform(0,1))<pn1o
             N1[i] = N1[i-1] - 1;
             N2[i] = N2[i-1] + 1;
         end
-        if rand()<pn2c
+        if rand(Uniform(0,1))<pn2c
             N2[i] = N2[i-1] - 1;
             N1[i] = N1[i-1] + 1;
         end
-        if rand()<pn2o
+        if rand(Uniform(0,1))<pn2o
             N2[i] = N2[i-1] - 1;
             N3[i] = N3[i-1] + 1;
         end
-        if rand()<pn3c
+        if rand(Uniform(0,1))<pn3c
             N3[i] = N3[i-1] - 1;
             N2[i] = N2[i-1] + 1;
         end
-        if rand()<pn3o
+        if rand(Uniform(0,1))<pn3o
             N3[i] = N3[i-1] - 1;
             N4[i] = N4[i-1] + 1;
         end
 
-        if rand()<pn4c
+        if rand(Uniform(0,1))<pn4c
             N4[i] = N4[i-1] - 1;
             N3[i] = N3[i-1] + 1;
         end
+        #Evolució canals M
+        if rand(Uniform(0,1))<pm0o
+            M0[i] = M0[i-1] - 1;
+            M1[i] = M1[i-1] + 1; 
+        end        
+        if rand(Uniform(0,1))<pm1c 
+            M1[i] = M1[i-1]- 1;
+            M0[i] = M0[i-1] + 1;
+        end
+        if rand(Uniform(0,1))<pm1o
+            M1[i] = M1[i-1] - 1;
+            M2[i] = M2[i-1] + 1;
+        end
+        if rand(Uniform(0,1))<pm2c
+            M2[i] = M2[i-1] - 1;
+            M1[i] = M1[i-1] + 1;
+        end
+        if rand(Uniform(0,1))<pm2o
+            M2[i] = M2[i-1] - 1;
+            M3[i] = M3[i-1] + 1;
+        end
+        if rand(Uniform(0,1))<pm3c
+            M3[i] = M3[i-1] - 1;
+            M2[i] = M2[i-1] + 1;
+        end
 
-        # # Evitem que hi hagi estats sense sentit físic
-        # if N0[i] > N_tot
-        #     N0[i]=N_tot
-        #     N1[i]=0;
-        #     N2[i]=0;
-        #     N3[i]=0;
-        #     N4[i]=0;
-        #     # elseif N0[i] < 0
-        #     #     N0[i]=0;
-        # end
-        # if N1[i] > N_tot
-        #     N1[i]=N_tot
-        #     N0[i]=0;
-        #     N2[i]=0;
-        #     N3[i]=0;
-        #     N4[i]=0;
-        # end
-        # if N2[i]>N_tot
-        #     N2[i]=N_tot
-        #     N0[i]=0;
-        #     N1[i]=0;
-        #     N3[i]=0;
-        #     N4[i]=0;
-        # end
-        # if N3[i] > N_tot
-        #     N3[i]=N_tot
-        #     N0[i]=0;
-        #     N1[i]=0;
-        #     N2[i]=0;
-        # end
-        # if N4[i] > N_tot
-        #     N4[i]=N_tot
-        #     N0[i]=0;
-        #     N1[i]=0;
-        #     N2[i]=0;
-        # end
-        # if M0[i] > N_tot
-        #     M0[i]=N_tot
-        #     M1[i]=0;
-        #     M2[i]=0;
-        #     M3[i]=0;
-        # end
-        # if M1[i] > N_tot
-        #     M1[i]=N_tot
-        #     M0[i]=0;
-        #     M2[i]=0;
-        #     M3[i]=0;
-        # end
-        # if M2[i] > N_tot
-        #     M2[i]=N_tot
-        #     M0[i]=0;
-        #     M1[i]=0;
-        #     M3[i]=0;
-        # end
-        # if M3[i] > N_tot
-        #     M3[i]=N_tot
-        #     M0[i]=0;
-        #     M1[i]=0;
-        #     M2[i]=0;
-        # end
-        # if H[i] < 0
-        #     H[i]=0;
-        #     elseif H[i] > N_tot
-        #     H[i]=N_tot
-        # end
+        #Evolució canals H
+        if rand(Uniform(0,1))<pho
+            H[i] = H[i-1] + 1;
+        end 
+        if rand(Uniform(0,1))< phc
+            H[i] = H[i-1] - 1;
+        end
+
+
+        # Evitem que hi hagi estats sense sentit físic
+        if N0[i] > N_tot
+            N0[i]=N_tot
+            N1[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N0[i] < 0
+            N0[i]=0
+        end
+        if N1[i] > N_tot
+            N1[i]=N_tot
+            N0[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N1[i] < 0
+            N1[i]=0
+        end
+        if N2[i]>N_tot
+            N2[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N2[i] < 0
+            N2[i]=0
+        end
+        if N3[i] > N_tot
+            N3[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        if N3[i] < 0
+            N3[i]=0
+        end
+        if N4[i] > N_tot
+            N4[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        if N4[i] < 0
+            N4[i]=0
+        end
+        if M0[i] > N_tot
+            M0[i]=N_tot
+            M1[i]=0;
+            M2[i]=0;
+            M3[i]=0;
+        end
+        if M0[i] < 0
+            M0[i]=0
+        end
+        if M1[i] > N_tot
+            M1[i]=N_tot
+            M0[i]=0;
+            M2[i]=0;
+            M3[i]=0;
+        end
+        if M1[i] < 0
+            M1[i]=0
+        end
+        if M2[i] > N_tot
+            M2[i]=N_tot
+            M0[i]=0;
+            M1[i]=0;
+            M3[i]=0;
+        end
+        if M2[i] < 0
+            M2[i]=0
+        end
+        if M3[i] > N_tot
+            M3[i]=N_tot
+            M0[i]=0;
+            M1[i]=0;
+            M2[i]=0;
+        end
+        if M3[i] < 0
+            M3[i]=0
+        end
+        if H[i] < 0
+            H[i]=0;
+        end
+        if H[i] > N_tot
+            H[i]=N_tot
+        end
 
         I_na = g_na * M3[i-1]/N_tot * H[i-1]/N_tot * (V[i-1] - V_na) ; #println(I_na)
         I_k = g_k * N4[i-1]/N_tot * (V[i-1] - V_k);# println(I_k)
@@ -274,16 +391,16 @@ u₀ = SVector{11}(vcat(rand(),n0, m0,h0));
 tspan = (0, 500);
 
 # Integration (states)
-step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += 0);
+step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += 1);
 prob_det = ODEProblem(hodg_hux_gates, u₀, tspan, p, dtmax = 0.001);
 sol_det = solve(prob_det, saveat = 0.1, callback = step_current);
-p[8] = 0.0
+p[8] = 0.0;
 
 #--------------------------------------------------------------------------------------------------------det 2 
 
 
 N_tot = 100;
-dt = 0.5e-3;
+dt = 0.1e-4;
 t_tot = 500;
 
 sol = channel_states_euler(N_tot, dt, t_tot, p);
