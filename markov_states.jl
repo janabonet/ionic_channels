@@ -38,7 +38,6 @@ function hodg_hux_gates(u, p, t)
     n₂ = u[4]
     n₃ = u[5]
     n₄ = u[6]
-
     m₀ = u[7]
     m₁ = u[8]
     m₂ = u[9]
@@ -77,13 +76,17 @@ m0 = rand(4);
 h0 = rand();
 n0=n0/sum(n0);
 m0=m0/sum(m0);
-u₀ = SVector{11}(vcat(rand(),n0, m0,h0));
+u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
 tspan = (0, 500);
 
 # Integration (states)
-step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += 1);
-prob_det = ODEProblem(hodg_hux_gates, u₀, tspan, p, dtmax = 0.001);
-sol_det = solve(prob_det, saveat = 0.1, callback = step_current);
+I_up=2.5;
+step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += I_up);
+pulse_up=PresetTimeCallback(100, integrator -> integrator.p[8] += I_up);
+pulse_down=PresetTimeCallback(102, integrator -> integrator.p[8] -= I_up);
+pulse=CallbackSet(pulse_up,pulse_down);
+prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, dtmax = 0.001);
+sol_det = solve(prob_det, saveat = 0.1, callback = pulse);
 p[8] = 0.0;
 
 #--------------------------------------------------------------------------------------------------------det 2 
@@ -108,11 +111,14 @@ function channel_states_euler(N_tot, dt, t_tot, p)
     H  = zeros(total_steps)
 
     # Initial conditions
-    V[1] = rand()
-    n0 = rand(5)
-    m0 = rand(4)
+    V[1] = u₀[1];
+    # n0 = rand(5)
+    n0=u₀[2:6];
+    # m0 = rand(4)
+    m0=u₀[7:10];
     n0 = round.(n0/sum(n0)*N_tot); 
     m0 = round.(m0/sum(m0)*N_tot); 
+    h0=u₀[11];
     N0[1] = n0[1]
     N1[1] = n0[2]
     N2[1] = n0[3]
@@ -122,12 +128,20 @@ function channel_states_euler(N_tot, dt, t_tot, p)
     M1[1] = m0[2]
     M2[1] = m0[3]
     M3[1] = m0[4]
-    H[1] = round(rand()*N_tot); 
+    H[1] = round(h0*N_tot); 
 
     for i in 2:total_steps
 
-        if i >= 20000000
+        # t/dt=nº steps = 500/0.5e-5 = 10^8
+        # steps/s = 1/dt
+
+        I_ext=0;
+        if i >= 1/dt*100
             I_ext=1;
+        end
+
+        if i>=1/dt*101
+            I_ext=0;
         end
 
         #Probabilities definition
@@ -375,12 +389,37 @@ end
 
 #Simulation
 
-N_tot = 1000;
+N_tot = 100;
 dt = 0.5e-5;
 t_tot = 500;
 
 myrange = 1:100:Int(round(t_tot/dt));
 sol = channel_states_euler(N_tot, dt, t_tot, p);
+
+# for ns in [1000,500,100,50,30,10]
+#     sol_n = channel_states_euler(ns, dt, t_tot, p);
+    
+#     fig1n=plot(sol_n.t[myrange], sol_n.V[myrange], label=L"V_{stoc}",
+#     xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
+#     plot!(sol_det.t, sol_det[1,:], xlabel = L"t (ms)", ylabel = L"V (mV)",linewidth = 1,
+#     label=L"V_{det}", ls=:dash,dpi=600,size = (700,400),
+#     xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
+
+#     fig2n=plot(sol_n.t[myrange], sol_n.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
+#     plot!(sol_n.t[myrange],sol_n.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
+#     plot!(sol_n.t[myrange],sol_n.H[myrange],label=L"H_{Markov}",dpi=600,size = (700,400))
+    
+#     #plot gates deterministic
+#     plot!(sol_det.t,sol_det[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
+#     linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
+#     plot!(sol_det.t,sol_det[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
+#     linewidth = 1,label=L"m_{det} \cdot N_{tot}", ls=:dash,dpi=600)
+#     plot!(sol_det.t,sol_det[11,:]*N_tot,xlabel = "t (ms)", ylabel = "Number of open channels",
+#     linewidth = 1,label=L"h_{det} \cdot N_{tot}", ls=:dash,dpi=600,
+#     xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15,left_margin=2Plots.mm, bottom_margin=2Plots.mm)
+
+# end
+
 
 #plot vol states
 fig1 = plot(sol.t[myrange],sol.V[myrange], label=L"V_{stoc}",
@@ -408,5 +447,5 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_det_bin_nhmar")
-savefig(fig2,"var_det_bin_nhmar")
+savefig(fig1,"v_n500_spikeinput")
+savefig(fig2,"var_n500_spikeinput")
