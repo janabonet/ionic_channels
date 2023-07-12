@@ -47,7 +47,8 @@ function hodg_hux_gates(u, p, t)
     # Channel currents
     I_na = g_na * m₃*h * (V - V_na)
     I_k = g_k * n₄ * (V - V_k)
-    I_l = g_l * (V - V_l)
+    # I_l = g_l * (V - V_l)
+    I_l=0;
 
     # ODE system
     dV = 1 / C * (I_ext - I_na - I_k - I_l)
@@ -85,8 +86,11 @@ step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += I_up);
 pulse_up=PresetTimeCallback(100, integrator -> integrator.p[8] += I_up);
 pulse_down=PresetTimeCallback(102, integrator -> integrator.p[8] -= I_up);
 pulse=CallbackSet(pulse_up,pulse_down);
-prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, dtmax = 0.001);
-sol_det = solve(prob_det, saveat = 0.1, callback = pulse);
+prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, adaptive=false,dt=0.5e-5);
+# sol = solve(prob_det,alg_hints=[:stiff],callback=step_current);
+sol_det = solve(prob_det,AutoVern9(Rodas5()), saveat = 0.1, callback = pulse);
+# sol_det = solve(prob_det,Rodas5(), saveat = 0.1, callback = pulse);
+
 p[8] = 0.0;
 
 #--------------------------------------------------------------------------------------------------------det 2 
@@ -129,7 +133,7 @@ function channel_states_euler(N_tot, dt, t_tot, p)
     M2[1] = m0[3]
     M3[1] = m0[4]
     H[1] = round(h0*N_tot); 
-
+    
     for i in 2:total_steps
 
         # t/dt=nº steps = 500/0.5e-5 = 10^8
@@ -137,10 +141,10 @@ function channel_states_euler(N_tot, dt, t_tot, p)
 
         I_ext=0;
         if i >= 1/dt*100
-            I_ext=1;
+            I_ext=3.5;
         end
 
-        if i>=1/dt*101
+        if i>=1/dt*104
             I_ext=0;
         end
 
@@ -378,7 +382,8 @@ function channel_states_euler(N_tot, dt, t_tot, p)
         end
         I_na = g_na * M3[i-1]/N_tot * H[i-1]/N_tot * (V[i-1] - V_na) ; #println(I_na)
         I_k = g_k * N4[i-1]/N_tot * (V[i-1] - V_k); 
-        I_l = g_l * (V[i-1] - V_l); 
+        # I_l = g_l * (V[i-1] - V_l); 
+        I_l=0;
 
         # ODE system
         V[i] = V[i-1] + dt *  1 / C * (I_ext - I_na - I_k - I_l)
@@ -447,5 +452,5 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n500_spikeinput")
-savefig(fig2,"var_n500_spikeinput")
+savefig(fig1,"v_n100_spikeinput_noleak")
+savefig(fig2,"var_n100_spikeinput_noleak")
