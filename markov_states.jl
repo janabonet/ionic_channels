@@ -26,6 +26,20 @@ struct solution
     H::Vector{Float64}
 end
 
+struct solution_vars
+    t::Vector{Float64}
+    V::Vector{Float64}
+    N4::Vector{Float64}
+    M3::Vector{Float64}
+    H::Vector{Float64}
+
+    N0::Vector{Float64}
+    N1::Vector{Float64}
+    N2::Vector{Float64}
+    N3::Vector{Float64}
+end
+
+
 
 #-------------------------------------------------------------det2
 function hodg_hux_gates(u, p, t)
@@ -47,8 +61,8 @@ function hodg_hux_gates(u, p, t)
     # Channel currents
     I_na = g_na * m₃*h * (V - V_na)
     I_k = g_k * n₄ * (V - V_k)
-    # I_l = g_l * (V - V_l)
-    I_l=0;
+    I_l = g_l * (V - V_l)
+    # I_l=0;
 
     # ODE system
     dV = 1 / C * (I_ext - I_na - I_k - I_l)
@@ -382,19 +396,19 @@ function channel_states_euler(N_tot, dt, t_tot, p)
         end
         I_na = g_na * M3[i-1]/N_tot * H[i-1]/N_tot * (V[i-1] - V_na) ; #println(I_na)
         I_k = g_k * N4[i-1]/N_tot * (V[i-1] - V_k); 
-        # I_l = g_l * (V[i-1] - V_l); 
-        I_l=0;
+        I_l = g_l * (V[i-1] - V_l); 
+        # I_l=0;
 
         # ODE system
         V[i] = V[i-1] + dt *  1 / C * (I_ext - I_na - I_k - I_l)
         # println(V[i])
     end
-    return solution(collect(0:dt:t_tot),V,N4,M3,H)
+    return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3)
 end
 
 #Simulation
 
-N_tot = 100;
+N_tot=50;
 dt = 0.5e-5;
 t_tot = 500;
 
@@ -450,7 +464,16 @@ plot!(sol_det.t,sol_det[11,:]*N_tot,xlabel = "t (ms)", ylabel = "Number of open 
 linewidth = 1,label=L"h_{det} \cdot N_{tot}", ls=:dash,dpi=600,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15,left_margin=2Plots.mm, bottom_margin=2Plots.mm)
 
+fig3=plot(sol.t[myrange],sol.N0[myrange],label=L"N_{0,Markov}",dpi=600,size = (700,400))
+plot!(sol.t[myrange],sol.N1[myrange],label=L"N_{1,Markov}",dpi=600,size = (700,400))
+plot!(sol.t[myrange],sol.N2[myrange],label=L"N_{2,Markov}",dpi=600,size = (700,400))
+plot!(sol.t[myrange],sol.N3[myrange],label=L"N_{3,Markov}",dpi=600,size = (700,400))
+plot!(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",
+xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
+background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
+xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n100_spikeinput_noleak")
-savefig(fig2,"var_n100_spikeinput_noleak")
+savefig(fig1,"v_n50_spikeinput")
+savefig(fig2,"var_n50_spikeinput")
+savefig(fig2,"nvars_n50")
