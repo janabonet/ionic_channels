@@ -76,13 +76,16 @@ function hodg_hux_gates(u, p, t)
     
     # Sodium channel
     dm₀h₁ = -(3*αₘ(V)+βₕ(V))*m₀h₁ + βₘ(V)*m₁*h₁+αₕ*m₀*h₀
-    dm₁h₁ = -(2*αₘ(V) + βₘ(V)+βₕ(V))*m₁*h₁ + 3*αₘ(V)*m₀*h₁ + 2*βₘ(V)*m₂*h₁+αₕ*m₁*h₀
-    dm₂h₁ = -(αₘ(V) + 2*βₘ(V)+βₕ(V))*m₂*h₁ + 2*αₘ(V)*m₁*h₁ + 3*βₘ(V)*m₃*h₁+αₕ*m₂*h₀
-    dm₃h₁ = -(3*βₘ(V)+βₕ(V))*m₃*h₁ + αₘ(V)*m₂*h₁+αₕ*m₃*h₀
+    dm₁h₁ = -(2*αₘ(V) + βₘ(V)+βₕ(V))*m₁*h₁ + 3*αₘ(V)*m₀*h₁ + 2*βₘ(V)*m₂*h₁+αₕ(V)*m₁*h₀
+    dm₂h₁ = -(αₘ(V) + 2*βₘ(V)+βₕ(V))*m₂*h₁ + 2*αₘ(V)*m₁*h₁ + 3*βₘ(V)*m₃*h₁+αₕ(V)*m₂*h₀
+    dm₃h₁ = -(3*βₘ(V)+βₕ(V))*m₃*h₁ + αₘ(V)*m₂*h₁+αₕ(V)*m₃*h₀
 
-    dh = αₕ(V)*(1 - h) - βₕ(V)*h
+    dm₀h₀ = -(3*αₘ(V)+βₕ(V))*m₀*h₀ + βₘ(V)*m₁*h₀+αₕ(V)*m₀*h₁
+    dm₁h₀ = -(2*αₘ(V) + βₘ(V)+αₕ(V))*m₁*h₀ + 3*αₘ(V)*m₀*h₀ + 2*βₘ(V)*m₂*h₀+βₕ(V)*m₁*h₁
+    dm₂h₀  = -(αₘ(V) + 2*βₘ(V)+αₕ(V))*m₂*h₀ + 2*αₘ(V)*m₁*h₀ + 3*βₘ(V)*m₃*h₀+βₕ(V)*h₁*m₂
+    dm₃h₀    = -(3*βₘ(V)+αₕ(V))*m₃*h₀ + αₘ(V)*m₂*h₀+βₕ(V)*m₃*h₁
 
-    @SVector [dV, dn₀, dn₁, dn₂, dn₃, dn₄, dm₀, dm₁, dm₂, dm₃, dh]
+    @SVector [dV, dn₀, dn₁, dn₂, dn₃, dn₄, dm₀h₁,dm₁h₁,dm₂h₁,dm₃h₁,dm₀h₀,dm₁h₀,dm₂h₀,dm₃h₀]
 end
 
 p[8] = 0.0;
