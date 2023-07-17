@@ -10,29 +10,29 @@ const C = 1.0;
 I_ext = 0.0;
 p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext];
 # Gate functions
-# αₙ(V) = (0.02 * (V - 25.0)) / (1.0 - exp((-1.0 * (V - 25.0)) / 9.0));
-# αₘ(V) = (0.182 * (V + 35.0)) / (1.0 - exp((-1.0 * (V + 35.0)) / 9.0));
-# αₕ(V) = 0.25 * exp((-1.0 * (V + 90.0)) / 12.0);
+αₙ(V) = (0.02 * (V - 25.0)) / (1.0 - exp((-1.0 * (V - 25.0)) / 9.0));
+αₘ(V) = (0.182 * (V + 35.0)) / (1.0 - exp((-1.0 * (V + 35.0)) / 9.0));
+αₕ(V) = 0.25 * exp((-1.0 * (V + 90.0)) / 12.0);
 
-# βₙ(V) = (-0.002 * (V - 25.0)) / (1.0 - exp((V - 25.0) / 9.0));
-# βₘ(V) = (-0.124 * (V + 35.0)) / (1.0 - exp((V + 35.0) / 9.0));
-# βₕ(V) = (0.25 * exp((V + 62.0) / 6.0)) / exp((V + 90.0) / 12.0);
+βₙ(V) = (-0.002 * (V - 25.0)) / (1.0 - exp((V - 25.0) / 9.0));
+βₘ(V) = (-0.124 * (V + 35.0)) / (1.0 - exp((V + 35.0) / 9.0));
+βₕ(V) = (0.25 * exp((V + 62.0) / 6.0)) / exp((V + 90.0) / 12.0);
 
-αₙ(V) = (0.01 * (10-V)) / (exp((10-V)/10)-1);
-αₘ(V) = (0.1*(25-V))/(exp((25-V)/10)-1);
-αₕ(V) = 0.07*exp(-v/20);
+# αₙ(V) = (0.01 * (10-V)) / (exp((10-V)/10)-1);
+# αₘ(V) = (0.1*(25-V))/(exp((25-V)/10)-1);
+# αₕ(V) = 0.07*exp(-v/20);
 
-βₙ(V) = 0.125*exp(-V/80);
-βₘ(V) = 4*exp(-V/18);
-βₕ(V) = 1/(exp((30-V)/10)+1);
+# βₙ(V) = 0.125*exp(-V/80);
+# βₘ(V) = 4*exp(-V/18);
+# βₕ(V) = 1/(exp((30-V)/10)+1);
 
-struct solution
-    t::Vector{Float64}
-    V::Vector{Float64}
-    N4::Vector{Float64}
-    M3::Vector{Float64}
-    H::Vector{Float64}
-end
+# struct solution
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     N4::Vector{Float64}
+#     M3::Vector{Float64}
+#     H::Vector{Float64}
+# end
 
 struct solution_vars
     t::Vector{Float64}
@@ -46,8 +46,6 @@ struct solution_vars
     N2::Vector{Float64}
     N3::Vector{Float64}
 end
-
-
 
 #-------------------------------------------------------------det2
 function hodg_hux_gates(u, p, t)
@@ -108,9 +106,9 @@ step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += I_up);
 pulse_up=PresetTimeCallback(100, integrator -> integrator.p[8] += I_up);
 pulse_down=PresetTimeCallback(102, integrator -> integrator.p[8] -= I_up);
 pulse=CallbackSet(pulse_up,pulse_down);
-prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, adaptive=false,dt=0.5e-5);
-# sol = solve(prob_det,alg_hints=[:stiff],callback=step_current);
-sol_det = solve(prob_det,AutoVern9(Rodas5()), saveat = 0.1, callback = pulse);
+prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, adaptive=false,dt=0.5e-3);
+sol = solve(prob_det,callback=pulse);
+# sol_det = solve(prob_det,AutoVern9(Rodas5()), saveat = 0.1, callback = pulse);
 # sol_det = solve(prob_det,Rodas5(), saveat = 0.1, callback = pulse);
 
 p[8] = 0.0;

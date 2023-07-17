@@ -52,14 +52,18 @@ function hodg_hux_gates(u, p, t)
     n₂ = u[4]
     n₃ = u[5]
     n₄ = u[6]
-    m₀ = u[7]
-    m₁ = u[8]
-    m₂ = u[9]
-    m₃ = u[10]
-    h = u[11]
+    m₀h₁ = u[7]
+    m₁h₁ = u[8]
+    m₂h₁ = u[9]
+    m₃h₁ = u[10]
+    m₀h₀ = u[11]
+    m₁h₀ =u[12]
+    m₂h₀ = u[13]
+    m₃h₀ = u[14]
 
     # Channel currents
-    I_na = g_na * m₃*h * (V - V_na)
+    # I_na = g_na * m₃*h * (V - V_na)
+    I_na = g_na * m₃h₁ * (V - V_na)
     I_k = g_k * n₄ * (V - V_k)
     I_l = g_l * (V - V_l)
     # I_l=0;
@@ -75,28 +79,27 @@ function hodg_hux_gates(u, p, t)
     dn₄ = -4*βₙ(V)*n₄ + αₙ(V)*n₃
     
     # Sodium channel
-    dm₀h₁ = -(3*αₘ(V)+βₕ(V))*m₀h₁ + βₘ(V)*m₁*h₁+αₕ*m₀*h₀
-    dm₁h₁ = -(2*αₘ(V) + βₘ(V)+βₕ(V))*m₁*h₁ + 3*αₘ(V)*m₀*h₁ + 2*βₘ(V)*m₂*h₁+αₕ(V)*m₁*h₀
-    dm₂h₁ = -(αₘ(V) + 2*βₘ(V)+βₕ(V))*m₂*h₁ + 2*αₘ(V)*m₁*h₁ + 3*βₘ(V)*m₃*h₁+αₕ(V)*m₂*h₀
-    dm₃h₁ = -(3*βₘ(V)+βₕ(V))*m₃*h₁ + αₘ(V)*m₂*h₁+αₕ(V)*m₃*h₀
+    dm₀h₁ = -(3*αₘ(V)+βₕ(V))* m₀h₁ + βₘ(V)* m₁h₁+αₕ(V) * m₀h₀
+    dm₁h₁ = -(2*αₘ(V) + βₘ(V)+βₕ(V))*m₁h₁ + 3*αₘ(V)*m₀h₁ + 2*βₘ(V)*m₂h₁+αₕ(V)*m₁h₀
+    dm₂h₁ = -(αₘ(V) + 2*βₘ(V)+βₕ(V))*m₂h₁ + 2*αₘ(V)*m₁h₁ + 3*βₘ(V)*m₃h₁+αₕ(V)*m₂h₀
+    dm₃h₁ = -(3*βₘ(V)+βₕ(V))*m₃h₁ + αₘ(V)*m₂h₁+αₕ(V)*m₃h₀
 
-    dm₀h₀ = -(3*αₘ(V)+βₕ(V))*m₀*h₀ + βₘ(V)*m₁*h₀+αₕ(V)*m₀*h₁
-    dm₁h₀ = -(2*αₘ(V) + βₘ(V)+αₕ(V))*m₁*h₀ + 3*αₘ(V)*m₀*h₀ + 2*βₘ(V)*m₂*h₀+βₕ(V)*m₁*h₁
-    dm₂h₀  = -(αₘ(V) + 2*βₘ(V)+αₕ(V))*m₂*h₀ + 2*αₘ(V)*m₁*h₀ + 3*βₘ(V)*m₃*h₀+βₕ(V)*h₁*m₂
-    dm₃h₀    = -(3*βₘ(V)+αₕ(V))*m₃*h₀ + αₘ(V)*m₂*h₀+βₕ(V)*m₃*h₁
+    dm₀h₀ = -(3*αₘ(V)+βₕ(V))*m₀h₀ + βₘ(V)*m₁h₀+αₕ(V)*m₀h₁
+    dm₁h₀ = -(2*αₘ(V) + βₘ(V)+αₕ(V))*m₁h₀ + 3*αₘ(V)*m₀h₀ + 2*βₘ(V)*m₂h₀+βₕ(V)*m₁h₁
+    dm₂h₀  = -(αₘ(V) + 2*βₘ(V)+αₕ(V))*m₂h₀ + 2*αₘ(V)*m₁h₀ + 3*βₘ(V)*m₃h₀+βₕ(V)*m₂h₁
+    dm₃h₀    = -(3*βₘ(V)+αₕ(V))*m₃h₀ + αₘ(V)*m₂h₀+βₕ(V)*m₃h₁
 
     @SVector [dV, dn₀, dn₁, dn₂, dn₃, dn₄, dm₀h₁,dm₁h₁,dm₂h₁,dm₃h₁,dm₀h₀,dm₁h₀,dm₂h₀,dm₃h₀]
 end
 
 p[8] = 0.0;
 
-u₀ = @SVector rand(11);
+u₀ = @SVector rand(14);
 n0 = rand(5);
-m0 = rand(4);
-h0 = rand();
+mh0 = rand(8);
 n0=n0/sum(n0);
-m0=m0/sum(m0);
-u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
+mh0=mh0/sum(mh0);
+u₀prob = SVector{14}(vcat(rand(),n0, mh0));
 tspan = (0, 500);
 
 # Integration (states)
@@ -105,9 +108,9 @@ step_current= PresetTimeCallback(100,integrator -> integrator.p[8] += I_up);
 pulse_up=PresetTimeCallback(100, integrator -> integrator.p[8] += I_up);
 pulse_down=PresetTimeCallback(102, integrator -> integrator.p[8] -= I_up);
 pulse=CallbackSet(pulse_up,pulse_down);
-prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, adaptive=false,dt=0.5e-5);
-# sol = solve(prob_det,alg_hints=[:stiff],callback=step_current);
-sol_det = solve(prob_det,AutoVern9(Rodas5()), saveat = 0.1, callback = pulse);
+prob_det = ODEProblem(hodg_hux_gates, u₀prob, tspan, p, adaptive=false,dt=0.5e-3);
+sol_det = solve(prob_det,callback=pulse);
+# sol_det = solve(prob_det,AutoVern9(Rodas5()), saveat = 0.1, callback = pulse);
 # sol_det = solve(prob_det,Rodas5(), saveat = 0.1, callback = pulse);
 
 p[8] = 0.0;
@@ -413,7 +416,7 @@ end
 
 #Simulation
 
-N_tot=50;
+N_tot=1000;
 dt = 0.5e-5;
 t_tot = 500;
 
@@ -461,11 +464,11 @@ background_color_legend = :white, foreground_color_legend = nothing,legend=:topr
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 #plot gates deterministic
-plot!(sol_det.t,sol_det[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
+plot!(sol_det.t,(sol_det[6,:])*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
-plot!(sol_det.t,sol_det[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
+plot!(sol_det.t,(sol_det[10,:]+sol_det[14,:])*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"m_{det} \cdot N_{tot}", ls=:dash,dpi=600)
-plot!(sol_det.t,sol_det[11,:]*N_tot,xlabel = "t (ms)", ylabel = "Number of open channels",
+plot!(sol_det.t,(sol_det[7,:]+sol_det[8,:]+sol_det[9,:]+sol_det[10,:])*N_tot,xlabel = "t (ms)", ylabel = "Number of open channels",
 linewidth = 1,label=L"h_{det} \cdot N_{tot}", ls=:dash,dpi=600,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15,left_margin=2Plots.mm, bottom_margin=2Plots.mm)
 
