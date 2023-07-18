@@ -79,8 +79,8 @@ function hodg_hux_gates(u, p, t)
     # I_l=0;
 
     # ODE system
-    # dV = 1 / C * (I_ext - I_na - I_k - I_l)
-    dV = (I_ext - I_na - I_k - I_l)
+    dV = 1 / C * (I_ext - I_na - I_k - I_l)
+    # dV = (I_ext - I_na - I_k - I_l)
 
     dn₀ = -4*αₙ(V)*n₀ + βₙ(V)*n₁
     dn₁ = -(3*αₙ(V) + βₙ(V))*n₁ + 4*αₙ(V)*n₀ + 2*βₙ(V)*n₂
@@ -98,6 +98,7 @@ function hodg_hux_gates(u, p, t)
     @SVector [dV, dn₀, dn₁, dn₂, dn₃, dn₄, dm₀, dm₁, dm₂, dm₃, dh]
 end
 
+#Initial conditions
 p[8] = 0.0;
 
 u₀ = @SVector rand(11);

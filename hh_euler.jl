@@ -62,24 +62,24 @@ g_k  = 35.0;
 g_l  = 0.3;
 C = 1.0;
 I_tot = 0.0;
-p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_tot]
+p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_tot];
 
 # Initial conditions
-n_inf(v) = αn(v) / (αn(v) + βn(v))
-m_inf(v) = αm(v) / (αm(v) + βm(v))
-h_inf(v) = αh(v) / (αh(v) + βh(v))
-v₀ = -60.0
-u₀ = [v₀, n_inf(v₀), m_inf(v₀), h_inf(v₀)]
+n_inf(v) = αn(v) / (αn(v) + βn(v));
+m_inf(v) = αm(v) / (αm(v) + βm(v));
+h_inf(v) = αh(v) / (αh(v) + βh(v));
+v₀ = -60.0;
+u₀ = [v₀, n_inf(v₀), m_inf(v₀), h_inf(v₀)];
 
 # Integration with euler's method
 
 tspan = (0,1000);
 h = 1e-3;
-sol = euler(hodg_hux_det, u₀, p, tspan, h)
+sol = euler(hodg_hux_det, u₀, p, tspan, h);
 
 # Plots
 
 plot(sol.t,sol.u[1,:])
-plot(sol.t,sol.u[2,:])
-plot!(sol.t,sol.u[3,:])
-plot!(sol.t,sol.u[4,:])
+plot(sol.t,sol.u[2,:],label="n")
+plot!(sol.t,sol.u[3,:],label="m")
+plot!(sol.t,sol.u[4,:],label="h")
