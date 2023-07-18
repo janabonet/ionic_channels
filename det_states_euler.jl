@@ -34,7 +34,6 @@ I_ext = 9.8;
 p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext];
 
 Veq=-0;
-
 αₙ(V) = (0.01 * (10-(V-Veq))) / (exp((10-(V-Veq))/10)-1);
 αₘ(V) = (0.1*(25-(V-Veq)))/(exp((25-(V-Veq))/10)-1);
 αₕ(V) = 0.07*exp(-(V-Veq)/20);
@@ -138,6 +137,3 @@ plot!(sol.t,sol.u[5,:],label="n3")
 plot!(sol.t,sol.u[4,:],label="n2")
 plot!(sol.t,sol.u[3,:],label="n1")
 plot!(sol.t,sol.u[2,:],label="n0")
-
-
-suma=sol.u[2,540]+sol.u[3,540]+sol.u[4,540]+sol.u[5,540]+sol.u[6,540]
