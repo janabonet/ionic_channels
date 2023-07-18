@@ -12,12 +12,12 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},tspan::Tuple
     for i in Int(100/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
-    return sol(t,u)
+    return solution(t,u)
 end
 
-struct sol
-    t::Matrix{Float64}
-    u::Vector{Float64}
+struct solution
+    t::Vector{Float64}
+    u::Matrix{Float64}
 end
 
 # Gate functions
@@ -79,4 +79,7 @@ sol = euler(hodg_hux_det, u₀, p, tspan, h)
 
 # Plots
 
-plot(t,u[1,:])
+plot(sol.t,sol.u[1,:])
+plot(sol.t,sol.u[2,:])
+plot!(sol.t,sol.u[3,:])
+plot!(sol.t,sol.u[4,:])
