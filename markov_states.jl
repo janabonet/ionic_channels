@@ -21,22 +21,6 @@ Veq=-0;
 βₘ(V) = 4*exp(-(V-Veq)/18);
 βₕ(V) = 1/(exp((30-(V-Veq))/10)+1); 
 
-function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
-    tspan::Tuple{Int64,Int64}, h::Float64)
-    n = round(Int, (tspan[2] - tspan[1]) / h)
-    t = collect(tspan[1]:h:tspan[2])
-    u = zeros(length(u0), n+1)
-    u[:,1] .= u0
-    for i in 1:Int(100/h)
-        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
-    end
-    p[8] += 2.5;
-    for i in Int(100/h+1):n
-        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
-    end
-    return solution_euler(t,u)
-end
-
 struct solution_euler
     t::Vector{Float64}
     u::Matrix{Float64}
@@ -61,6 +45,27 @@ struct solution_vars
     N1::Vector{Float64}
     N2::Vector{Float64}
     N3::Vector{Float64}
+end
+
+function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
+    tspan::Tuple{Int64,Int64}, h::Float64)
+    n = round(Int, (tspan[2] - tspan[1]) / h)
+    t = collect(tspan[1]:h:tspan[2])
+    u = zeros(length(u0), n+1)
+    u[:,1] .= u0
+    # I_ext = 0;
+    for i in 1:Int(100/h)
+        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+    end
+    p[8] += 3;
+    for i in Int(100/h+1):Int(104/h)
+        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
+    end
+    p[8] += -3;
+    for i in Int(104/h+1):n
+        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
+    end
+    return solution_euler(t,u)
 end
 
 #-------------------------------------------------------------det2
@@ -210,9 +215,9 @@ function channel_states_markov(N_tot, dt, t_tot, p)
             I_ext=2.5;
         end
 
-        if i>=1/dt*104
-            I_ext=0;
-        end
+        # if i>=1/dt*104
+        #     I_ext=0;
+        # end
 
         #Probabilities definition
         # N0[i] = N0[i-1] + rand(Binomial(N1[i-1],βₙ(V[i-1])*dt)) - rand(Binomial(N0[i-1],4*αₙ(V[i-1])*dt)) 
@@ -468,13 +473,12 @@ u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
 tspan = (0, 200);
 
 #Simulation
-N_tot=500;
+N_tot=1000;
 dt = 0.5e-3;
 t_tot = 500;
 
 myrange = 1:100:Int(round(t_tot/dt));
 sol = channel_states_markov(N_tot, dt, t_tot, p);
-
 
 #plot vol states
 fig1 = plot(sol.t[myrange],sol.V[myrange], label=L"V_{stoc}",
@@ -511,9 +515,9 @@ background_color_legend = :white, foreground_color_legend = nothing,legend=:topr
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n500_spikeinput")
-savefig(fig2,"var_n500_spikeinput")
-savefig(fig2,"nvars_n500_spikeinput")
+savefig(fig1,"v_n1000_spike")
+savefig(fig2,"var_n1000_spike")
+savefig(fig2,"nvars_n1000_spike")
 
 a
 
