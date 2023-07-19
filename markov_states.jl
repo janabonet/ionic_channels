@@ -8,7 +8,7 @@ const g_na = 120;
 const g_k = 36.0;
 const g_l = 0.3;
 const C = 1.0;
-I_ext = 9.8;
+I_ext = 0;
 p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext];
 
 # Gate functions
@@ -30,7 +30,7 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     for i in 1:Int(100/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
-    # p[8] += 1;
+    p[8] += 2.5;
     for i in Int(100/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
@@ -115,23 +115,23 @@ v₀ = -60.0;
 n0 = rand(4);
 ns0=[n0; n_inf(v₀)];
 m0 = rand(3);
-ms0 = [m0; m_inf(v₀)]
+ms0 = [m0; m_inf(v₀)];
 # h0 = rand();
 ns0=ns0/sum(ns0);
 ms0=ms0/sum(ms0);
 u₀prob = (vcat(v₀,ns0,ms0,h_inf(v₀)));
 
-tspan = (0,200);
+tspan = (0,500);
 h = 1e-3;
 sol_det = euler(hodg_hux_det_states, u₀prob, p, tspan, h);
-# # Plots
-# plot(sol_det.t,sol_det.u[1,:])
-# # n
-# plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
-# # m
-# plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
-# # h
-# plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
+# Plots
+plot(sol_det.t,sol_det.u[1,:])
+# n
+plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
+# m
+plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
+# h
+plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
 
 # --------------------------------------------------------- Integration with solver
 #Initial conditions
@@ -205,14 +205,14 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         # t/dt=nº steps = 500/0.5e-5 = 10^8
         # steps/s = 1/dt
 
-        # I_ext=0;
-        # if i >= 1/dt*100
-        #     I_ext=20;
-        # end
+        I_ext=0;
+        if i >= 1/dt*100
+            I_ext=2.5;
+        end
 
-        # if i>=1/dt*104
-        #     I_ext=0;
-        # end
+        if i>=1/dt*104
+            I_ext=0;
+        end
 
         #Probabilities definition
         # N0[i] = N0[i-1] + rand(Binomial(N1[i-1],βₙ(V[i-1])*dt)) - rand(Binomial(N0[i-1],4*αₙ(V[i-1])*dt)) 
@@ -468,9 +468,9 @@ u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
 tspan = (0, 200);
 
 #Simulation
-N_tot=1000;
+N_tot=500;
 dt = 0.5e-3;
-t_tot = 200;
+t_tot = 500;
 
 myrange = 1:100:Int(round(t_tot/dt));
 sol = channel_states_markov(N_tot, dt, t_tot, p);
@@ -492,7 +492,6 @@ background_color_legend = :white, foreground_color_legend = nothing,legend=:topr
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 #plot gates deterministic
-# (sol_det[6,:].^4)*N_tot
 plot!(sol_det.t,sol_det.u[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
 plot!(sol_det.t,sol_det.u[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
@@ -512,15 +511,11 @@ background_color_legend = :white, foreground_color_legend = nothing,legend=:topr
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n1000_spikeinput_params")
-savefig(fig2,"var_n1000_spikeinput_params")
-savefig(fig2,"nvars_n1000")
+savefig(fig1,"v_n500_spikeinput")
+savefig(fig2,"var_n500_spikeinput")
+savefig(fig2,"nvars_n500_spikeinput")
 
-
-
-
-
-
+a
 
 # for ns in [1000,500,100,50,30,10]
 #     sol_n = channel_states_euler(ns, dt, t_tot, p);
