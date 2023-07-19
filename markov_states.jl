@@ -46,22 +46,22 @@ struct solution_vars
     N2::Vector{Float64}
     N3::Vector{Float64}
 end
-
+p[8] = 0;
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
     n = round(Int, (tspan[2] - tspan[1]) / h)
     t = collect(tspan[1]:h:tspan[2])
     u = zeros(length(u0), n+1)
     u[:,1] .= u0
-    # I_ext = 0;
+
     for i in 1:Int(100/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
-    p[8] += 3;
-    for i in Int(100/h+1):Int(104/h)
+    p[8] += 2.5;
+    for i in Int(100/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
-    p[8] += -3;
+    # p[8] += -2.5;
     for i in Int(104/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
@@ -130,7 +130,7 @@ tspan = (0,500);
 h = 1e-3;
 sol_det = euler(hodg_hux_det_states, u₀prob, p, tspan, h);
 # Plots
-plot(sol_det.t,sol_det.u[1,:])
+plot(sol_det.t,sol_det.u[1,:],label="V")
 # n
 plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
 # m
@@ -215,9 +215,9 @@ function channel_states_markov(N_tot, dt, t_tot, p)
             I_ext=2.5;
         end
 
-        # if i>=1/dt*104
-        #     I_ext=0;
-        # end
+        if i>=1/dt*104
+            I_ext=0;
+        end
 
         #Probabilities definition
         # N0[i] = N0[i-1] + rand(Binomial(N1[i-1],βₙ(V[i-1])*dt)) - rand(Binomial(N0[i-1],4*αₙ(V[i-1])*dt)) 
@@ -515,9 +515,9 @@ background_color_legend = :white, foreground_color_legend = nothing,legend=:topr
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n1000_spike")
-savefig(fig2,"var_n1000_spike")
-savefig(fig2,"nvars_n1000_spike")
+savefig(fig1,"v_n1000_step")
+savefig(fig2,"var_n1000_step")
+savefig(fig2,"nvars_n1000_step")
 
 a
 
