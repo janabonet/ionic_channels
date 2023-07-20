@@ -165,7 +165,7 @@ plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
 # p[8] = 0.0;
 
 #--------------------------------------------------------------------------------------------------------det 2 
-
+I_ext=0;
 function channel_states_markov(N_tot, dt, t_tot, p)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
 
@@ -212,7 +212,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
         I_ext=0;
         if i >= 1/dt*100
-            I_ext=2.5;
+            I_ext=-4;
         end
 
         if i>=1/dt*104
@@ -542,5 +542,4 @@ a
 #     plot!(sol_det.t,sol_det[11,:]*N_tot,xlabel = "t (ms)", ylabel = "Number of open channels",
 #     linewidth = 1,label=L"h_{det} \cdot N_{tot}", ls=:dash,dpi=600,
 #     xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15,left_margin=2Plots.mm, bottom_margin=2Plots.mm)
-
 # end
