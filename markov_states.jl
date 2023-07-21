@@ -46,25 +46,25 @@ struct solution_vars
     N2::Vector{Float64}
     N3::Vector{Float64}
 end
-p[8] = 0;
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
     n = round(Int, (tspan[2] - tspan[1]) / h)
     t = collect(tspan[1]:h:tspan[2])
     u = zeros(length(u0), n+1)
     u[:,1] .= u0
-
     for i in 1:Int(100/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
-    p[8] += 2.5;
-    for i in Int(100/h+1):n
+    p[8] += 1;
+    for i in Int(100/h+1):Int(104/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
-    # p[8] += -2.5;
+    p[8] += -1;
     for i in Int(104/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
     end
+    # p[8] = 0;
+    # I_ext=0;
     return solution_euler(t,u)
 end
 
@@ -126,7 +126,7 @@ ns0=ns0/sum(ns0);
 ms0=ms0/sum(ms0);
 u₀prob = (vcat(v₀,ns0,ms0,h_inf(v₀)));
 
-tspan = (0,500);
+tspan = (0,200);
 h = 1e-3;
 sol_det = euler(hodg_hux_det_states, u₀prob, p, tspan, h);
 # Plots
@@ -163,7 +163,6 @@ plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
 # # sol_det = solve(prob_det,Rodas5(), saveat = 0.1, callback = pulse);
 
 # p[8] = 0.0;
-
 #--------------------------------------------------------------------------------------------------------det 2 
 I_ext=0;
 function channel_states_markov(N_tot, dt, t_tot, p)
@@ -211,11 +210,11 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         # steps/s = 1/dt
 
         I_ext=0;
-        if i >= 1/dt*100
-            I_ext=-4;
+        if i >= 1/dt*100 || i <= 1/dt*107
+            I_ext=2.5;
         end
 
-        if i>=1/dt*104
+        if i>=1/dt*107
             I_ext=0;
         end
 
@@ -463,21 +462,12 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3)
 end
 
-u₀ = @SVector rand(11);
-n0 = rand(5);
-m0 = rand(4);
-h0 = rand();
-n0=n0/sum(n0);
-m0=m0/sum(m0);
-u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
-tspan = (0, 200);
-
-#Simulation
-N_tot=1000;
-dt = 0.5e-3;
-t_tot = 500;
-
+# ------------------------------------------------Simulations
+N_tot = 1000;
+dt = 0.5e-4;
+t_tot = 300;
 myrange = 1:100:Int(round(t_tot/dt));
+# Markov simulation
 sol = channel_states_markov(N_tot, dt, t_tot, p);
 
 #plot vol states
@@ -487,6 +477,9 @@ xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 plot!(sol_det.t, sol_det.u[1,:], xlabel = L"t (ms)", ylabel = L"V (mV)",
 linewidth = 1,label=L"V_{det}", ls=:dash,dpi=600,size = (700,400),
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
+# plot binomial
+plot!(sol.t[myrange],sol.V[myrange],
+xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 
 fig2 = plot(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
 plot!(sol.t[myrange],sol.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
@@ -495,7 +488,7 @@ xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
 background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
-#plot gates deterministic
+#plot states deterministic
 plot!(sol_det.t,sol_det.u[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
 plot!(sol_det.t,sol_det.u[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
@@ -505,19 +498,29 @@ linewidth = 1,label=L"h_{det} \cdot N_{tot}", ls=:dash,dpi=600,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,
 legendfontsize=15,left_margin=2Plots.mm, bottom_margin=2Plots.mm)
 
-fig3=plot(sol.t[myrange],sol.N0[myrange],label=L"N_{0,Markov}",dpi=600,size = (700,400))
-plot!(sol.t[myrange],sol.N1[myrange],label=L"N_{1,Markov}",dpi=600,size = (700,400))
-plot!(sol.t[myrange],sol.N2[myrange],label=L"N_{2,Markov}",dpi=600,size = (700,400))
-plot!(sol.t[myrange],sol.N3[myrange],label=L"N_{3,Markov}",dpi=600,size = (700,400))
-plot!(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",
+# plot states binomial
+plot!(sol.t[myrange],sol.N4[myrange],label=L"N_{4,bin}",dpi=600, ylimits=(0,11),size = (700,400))
+plot!(sol.t[myrange],sol.M3[myrange],label=L"M_{3,bin}",dpi=600, ylimits=(0,11),size = (700,400))
+plot!(sol.t[myrange],sol.H[myrange],label=L"H_{bin}",
 xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
 background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
-xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
+xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15, ylimits=(0,11))
+
+
+
+# fig3=plot(sol.t[myrange],sol.N0[myrange],label=L"N_{0,Markov}",dpi=600,size = (700,400))
+# plot!(sol.t[myrange],sol.N1[myrange],label=L"N_{1,Markov}",dpi=600,size = (700,400))
+# plot!(sol.t[myrange],sol.N2[myrange],label=L"N_{2,Markov}",dpi=600,size = (700,400))
+# plot!(sol.t[myrange],sol.N3[myrange],label=L"N_{3,Markov}",dpi=600,size = (700,400))
+# plot!(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",
+# xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
+# background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
+# xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
 
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n1000_step")
-savefig(fig2,"var_n1000_step")
-savefig(fig2,"nvars_n1000_step")
+savefig(fig1,"v_n"*string(N_tot)*"_spike")
+savefig(fig2,"var_n"*string(N_tot)*"_spike")
+# savefig(fig2,"nvars_n"*string(N_tot)*"_spike")
 
 a
 
