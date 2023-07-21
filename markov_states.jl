@@ -468,6 +468,15 @@ dt = 0.5e-4;
 t_tot = 300;
 myrange = 1:100:Int(round(t_tot/dt));
 # Markov simulation
+u₀ = @SVector rand(11);
+n0 = rand(5);
+m0 = rand(4);
+h0 = rand();
+n0=n0/sum(n0);
+m0=m0/sum(m0);
+u₀prob = SVector{11}(vcat(rand(),n0, m0,h0));
+tspan = (0, 200);
+
 sol = channel_states_markov(N_tot, dt, t_tot, p);
 
 #plot vol states
