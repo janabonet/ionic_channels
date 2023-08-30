@@ -179,7 +179,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
     for i in 2:total_steps
         
         I_ext=0;
-        if i >= 1/dt*100 || i <= 1/dt*107
+        if i >= 1/dt*100 && i <= 1/dt*107
             I_ext=3;
         end
 
@@ -275,7 +275,6 @@ function channel_states_bin(N_tot, dt, t_tot, p)
 end
 #--------------------------------------------------------------------------------------------------------det 2 
 I_ext=0;
-
 function channel_states_markov(N_tot, dt, t_tot, p)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
 
@@ -323,7 +322,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         # steps/s = 1/dt
 
         I_ext=0;
-        if i >= 1/dt*100 || i <= 1/dt*107
+        if i >= 1/dt*100 && i <= 1/dt*107
             I_ext=3;
         end
 
@@ -582,9 +581,9 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3,changes)
 end
 # -----------------------------------------------------------Simulations
-N_tot = 100;
+N_tot = 5;
 dt = 0.5e-4;
-dt_markov=0.1e-4;
+dt_markov=0.5e-4;
 t_tot = 300;
 myrange = 1:100:Int(round(t_tot/dt));
 
@@ -593,11 +592,11 @@ sol_bin = channel_states_bin(N_tot, dt, t_tot, p);
 
 # Markov simulation
 u₀ = @SVector rand(11);
-tspan = (0, 100);
-sol = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+tspan = (0, 300);
+sol_mar = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
 
-#plot vol states
-fig1 = plot(sol.t[myrange],sol.V[myrange], label=L"V_{Markov}",
+#plot vol states (Markov)
+fig1 = plot(sol_mar.t[myrange],sol_mar.V[myrange], label=L"V_{Markov}",
 xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 #plot determinisitc
 plot!(sol_det.t, sol_det.u[1,:], xlabel = L"t (ms)", ylabel = L"V (mV)",
@@ -607,17 +606,17 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 plot!(sol_bin.t[myrange],sol_bin.V[myrange],label=L"V_{bin}",
 xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 
-fign=plot(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
+fign=plot(sol_mar.t[myrange],sol_mar.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
 plot!(sol_det.t,sol_det.u[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
 plot!(sol_bin.t[myrange],sol_bin.N4[myrange],label=L"N_{4,bin}",dpi=600)
 
-figm=plot(sol.t[myrange],sol.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
+figm=plot(sol_mar.t[myrange],sol_mar.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
 plot!(sol_det.t,sol_det.u[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"m_{det} \cdot N_{tot}", ls=:dash,dpi=600)
 plot!(sol_bin.t[myrange],sol_bin.M3[myrange],label=L"M_{3,bin}",dpi=600)
 
-figh=plot(sol.t[myrange],sol.H[myrange],label=L"H_{Markov}",
+figh=plot(sol_mar.t[myrange],sol_mar.H[myrange],label=L"H_{Markov}",
 xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
 background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
@@ -658,11 +657,13 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 # --------------------------------------------Figures
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
 savefig(fig1,"v_n"*string(N_tot)*"_spike")
-savefig(fig2,"var_n"*string(N_tot)*"_spike")
+# savefig(fig2,"var_n"*string(N_tot)*"_spike")
+savefig(fign,"n_n"*string(N_tot)*"_spike")
+savefig(figm,"m_n"*string(N_tot)*"_spike")
+savefig(figh,"h_n"*string(N_tot)*"_spike")
+
 # savefig(fig2,"nvars_n"*string(N_tot)*"_spike")
-
 a
-
 # for ns in [1000,500,100,50,30,10]
 #     sol_n = channel_states_euler(ns, dt, t_tot, p);
     
