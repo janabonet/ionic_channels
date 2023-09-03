@@ -32,6 +32,7 @@ struct solution
     N4::Vector{Float64}
     M3::Vector{Float64}
     H::Vector{Float64}
+    intensitat::Vector{Float64}
 end
 
 struct solution_vars
@@ -46,6 +47,7 @@ struct solution_vars
     N2::Vector{Float64}
     N3::Vector{Float64}
     changes::Vector{Float64}
+    intensitat_vars::Vector{Float64}
 end
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
@@ -148,6 +150,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
 
     # iniciar vectors
     V = zeros(total_steps)
+    intensitat=zeros(total_steps)
     N0 = zeros(total_steps)
     N1 = zeros(total_steps)
     N2 = zeros(total_steps)
@@ -161,6 +164,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
 
     # Initial conditions
     V[1] = rand()
+    intensitat[1]=0;
     n0 = rand(5)
     m0 = rand(4)
     n0 = round.(n0/sum(n0)*N_tot); 
@@ -186,6 +190,8 @@ function channel_states_bin(N_tot, dt, t_tot, p)
         if i>=1/dt*107
             I_ext=0;
         end
+
+        intensitat[i]=I_ext;
 
         # Evolucio canals 
         N0[i] = N0[i-1] + rand(Binomial(N1[i-1],βₙ(V[i-1])*dt)) - rand(Binomial(N0[i-1],4*αₙ(V[i-1])*dt)) 
@@ -271,7 +277,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
         # ODE system
         V[i] = V[i-1] + dt *  1 / C * (I_ext - I_na - I_k - I_l)
     end
-    return solution(collect(0:dt:t_tot),V,N4,M3,H)
+    return solution(collect(0:dt:t_tot),V,N4,M3,H,intensitat)
 end
 #--------------------------------------------------------------------------------------------------------det 2 
 I_ext=0;
@@ -284,6 +290,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
     # iniciar vectors
     V = zeros(total_steps)
+    intensitat_vars=zeros(total_steps)
     N0 = zeros(total_steps)
     N1 = zeros(total_steps)
     N2 = zeros(total_steps)
@@ -299,6 +306,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
     # Initial conditions
     V[1] = u₀[1];
+    intensitat_vars[1]=0;
     # n0 = rand(5)
     n0=u₀[2:6];
     # m0 = rand(4)
@@ -330,6 +338,8 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         if i>=1/dt*107
             I_ext=0;
         end
+
+        intensitat_vars[i]=I_ext;
 
         #Probabilities definition
         # N0[i] = N0[i-1] +p1c-p0o
@@ -579,7 +589,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     end
     avg=sum(changes)/total_steps;
     print("mar_avg: "*string(avg))
-    return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3,changes)
+    return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3,changes,intensitat_vars)
 end
 # -----------------------------------------------------------Simulations
 N_tot = 1000;
@@ -594,10 +604,12 @@ sol_bin = channel_states_bin(N_tot, dt, t_tot, p);
 # Markov simulation
 u₀ = @SVector rand(11);
 tspan = (0, 100);
-sol = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+sol_mar = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+
+int=plot(sol_mar.t[myrange],sol_mar.intensitat[myrange]);
 
 #plot vol states
-fig1 = plot(sol.t[myrange],sol.V[myrange], label=L"V_{Markov}",
+fig1 = plot(sol_mar.t[myrange],sol_mar.V[myrange], label=L"V_{Markov}",
 xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 #plot determinisitc
 plot!(sol_det.t, sol_det.u[1,:], xlabel = L"t (ms)", ylabel = L"V (mV)",
@@ -607,17 +619,17 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 plot!(sol_bin.t[myrange],sol_bin.V[myrange],label=L"V_{bin}",
 xlabel = L"t (ms)",ylabel = L"V (mV)",dpi=600,size = (700,400))
 
-fign=plot(sol.t[myrange],sol.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
+fign=plot(sol_mar.t[myrange],sol_mar.N4[myrange],label=L"N_{4,Markov}",dpi=600,size = (700,400))
 plot!(sol_det.t,sol_det.u[6,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"n_{det} \cdot N_{tot}",ls=:dash,dpi=600)
 plot!(sol_bin.t[myrange],sol_bin.N4[myrange],label=L"N_{4,bin}",dpi=600)
 
-figm=plot(sol.t[myrange],sol.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
+figm=plot(sol_mar.t[myrange],sol_mar.M3[myrange],label=L"M_{3,Markov}",dpi=600,size = (700,400))
 plot!(sol_det.t,sol_det.u[10,:]*N_tot,xlabel = L"t (ms)", ylabel = L"Number\:of\:open\:channels",
 linewidth = 1,label=L"m_{det} \cdot N_{tot}", ls=:dash,dpi=600)
 plot!(sol_bin.t[myrange],sol_bin.M3[myrange],label=L"M_{3,bin}",dpi=600)
 
-figh=plot(sol.t[myrange],sol.H[myrange],label=L"H_{Markov}",
+figh=plot(sol_mar.t[myrange],sol_mar.H[myrange],label=L"H_{Markov}",
 xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
 background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
 xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
@@ -658,7 +670,10 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 # --------------------------------------------Figures
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
 savefig(fig1,"v_n"*string(N_tot)*"_spike")
-savefig(fig2,"var_n"*string(N_tot)*"_spike")
+savefig(fign,"var_n"*string(N_tot)*"_spike")
+savefig(figm,"var_m"*string(N_tot)*"_spike")
+savefig(figh,"var_h"*string(N_tot)*"_spike")
+
 # savefig(fig2,"nvars_n"*string(N_tot)*"_spike")
 
 a
