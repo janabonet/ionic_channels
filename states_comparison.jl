@@ -132,14 +132,14 @@ u₀det = (vcat(v₀,ns0,ms0,h_inf(v₀)));
 tspan = (0,300);
 h = 1e-3;
 sol_det = euler(hodg_hux_det_states, u₀det, p, tspan, h);
-# Plots
-plot(sol_det.t,sol_det.u[1,:],label="V")
-# n
-plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
-# m
-plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
-# h
-plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
+# # Plots
+# plot(sol_det.t,sol_det.u[1,:],label="V")
+# # n
+# plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
+# # m
+# plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
+# # h
+# plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
 # ----------------------------------------------------------------------binomial
 I_ext=0;
 function channel_states_bin(N_tot, dt, t_tot, p)
@@ -184,7 +184,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
         
         I_ext=0;
         if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=3;
+            I_ext=1.8;
         end
 
         if i>=1/dt*107
@@ -332,7 +332,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
         I_ext=0;
         if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=3;
+            I_ext=2.8;
         end
 
         if i>=1/dt*107
@@ -591,6 +591,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     print("mar_avg: "*string(avg))
     return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3,changes,intensitat_vars)
 end
+I_ext=0;
 # -----------------------------------------------------------Simulations
 N_tot = 1000;
 dt = 0.5e-4;
@@ -606,7 +607,8 @@ u₀ = @SVector rand(11);
 tspan = (0, 100);
 sol_mar = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
 
-int=plot(sol_mar.t[myrange],sol_mar.intensitat[myrange]);
+# int=plot(sol_mar.t[myrange],sol_mar.intensitat_vars[myrange]);
+# plot!(sol_bin.t[myrange],sol_bin.intensitat[myrange])
 
 #plot vol states
 fig1 = plot(sol_mar.t[myrange],sol_mar.V[myrange], label=L"V_{Markov}",
