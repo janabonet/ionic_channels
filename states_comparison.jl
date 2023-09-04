@@ -184,7 +184,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
         
         I_ext=0;
         if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=3;
+            I_ext=1.8;
         end
 
         if i>=1/dt*107
@@ -593,7 +593,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 end
 I_ext=0;
 # -----------------------------------------------------------Simulations
-N_tot = 50;
+N_tot = 10;
 dt = 0.5e-4;
 dt_markov=0.5e-4;
 t_tot = 300;
@@ -671,10 +671,10 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 
 # --------------------------------------------Figures
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n"*string(N_tot)*"_spike")
-savefig(fign,"var_n"*string(N_tot)*"_spike")
-savefig(figm,"var_m"*string(N_tot)*"_spike")
-savefig(figh,"var_h"*string(N_tot)*"_spike")
+savefig(fig1,"v_n"*string(N_tot)*"_spike2")
+savefig(fign,"var_n"*string(N_tot)*"_spike2")
+savefig(figm,"var_m"*string(N_tot)*"_spike2")
+savefig(figh,"var_h"*string(N_tot)*"_spike2")
 
 # savefig(fig2,"nvars_n"*string(N_tot)*"_spike")
 a
