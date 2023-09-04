@@ -184,7 +184,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
         
         I_ext=0;
         if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=2.4;
+            I_ext=3;
         end
 
         if i>=1/dt*107
@@ -332,7 +332,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
         I_ext=0;
         if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=2.8;
+            I_ext=2.7;
         end
 
         if i>=1/dt*107
