@@ -141,7 +141,7 @@ sol_det = euler(hodg_hux_det_states, u₀det, p, tspan, h);
 # # h
 # plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
 # ----------------------------------------------------------------------binomial
-I_ext=0;
+I_ext=-2;
 function channel_states_bin(N_tot, dt, t_tot, p)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
 
@@ -182,13 +182,13 @@ function channel_states_bin(N_tot, dt, t_tot, p)
 
     for i in 2:total_steps
         
-        I_ext=0;
+        I_ext=-2;
         if i >= 1/dt*100 && i <= 1/dt*107
             I_ext=1.8;
         end
 
         if i>=1/dt*107
-            I_ext=0;
+            I_ext=-2;
         end
 
         intensitat[i]=I_ext;
@@ -280,7 +280,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
     return solution(collect(0:dt:t_tot),V,N4,M3,H,intensitat)
 end
 #--------------------------------------------------------------------------------------------------------det 2 
-I_ext=0;
+I_ext=-2;
 
 function channel_states_markov(N_tot, dt, t_tot, p)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
@@ -330,13 +330,13 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         # t/dt=nº steps = 500/0.5e-5 = 10^8
         # steps/s = 1/dt
 
-        I_ext=0;
+        I_ext=-2;
         if i >= 1/dt*100 && i <= 1/dt*107
             I_ext=2.7;
         end
 
         if i>=1/dt*107
-            I_ext=0;
+            I_ext=-2;
         end
 
         intensitat_vars[i]=I_ext;
@@ -591,9 +591,9 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     print("mar_avg: "*string(avg))
     return solution_vars(collect(0:dt:t_tot),V,N4,M3,H,N0,N1,N2,N3,changes,intensitat_vars)
 end
-I_ext=0;
+I_ext=-2;
 # -----------------------------------------------------------Simulations
-N_tot = 10;
+N_tot = 500;
 dt = 0.5e-4;
 dt_markov=0.5e-4;
 t_tot = 300;
@@ -671,10 +671,11 @@ xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfont
 
 # --------------------------------------------Figures
 # fig_tot=plot(fig1,fig2,layout=(2,1),dpi=600)
-savefig(fig1,"v_n"*string(N_tot)*"_spike2")
-savefig(fign,"var_n"*string(N_tot)*"_spike2")
-savefig(figm,"var_m"*string(N_tot)*"_spike2")
-savefig(figh,"var_h"*string(N_tot)*"_spike2")
+Iext=abs(I_ext);
+savefig(fig1,"v_n"*string(N_tot)*"_spike_negin_"*string(Iext))
+savefig(fign,"var_n"*string(N_tot)*"_spike_negin_"*string(Iext))
+savefig(figm,"var_m"*string(N_tot)*"_spike_negin_"*string(Iext))
+savefig(figh,"var_h"*string(N_tot)*"_spike_negin_"*string(Iext))
 
 # savefig(fig2,"nvars_n"*string(N_tot)*"_spike")
 a
@@ -709,5 +710,4 @@ a
 #     xlabel =L"t (ms)", ylabel ="Number of open channels",dpi=600,size = (700,400),
 #     background_color_legend = :white, foreground_color_legend = nothing,legend=:topright,
 #     xtickfontsize=12,ytickfontsize=12,xguidefontsize=16,yguidefontsize=16,legendfontsize=15)
-
 # end
