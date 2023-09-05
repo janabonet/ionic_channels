@@ -1,76 +1,101 @@
 using Plots, Distributions, LaTeXStrings, DifferentialEquations,StaticArrays
 
 # Parameters
-const V_na = 115;
-const V_k = -12.0;
-const V_l = 10.6;
-const g_na = 120;
-const g_k = 36.0;
-const g_l = 0.3;
-const C = 1.0;
-I_ext = -1;
-p = [V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext];
+const g_k = 30; # potassium channel conductance (min^-1)
+const g_kq = 1; # potassium channel conductance with quinine (min^-1)
+const g_n = 0.08; # nonspecific channel conductance (min^-1)
+const g_nq = 0.005; # nonspecific channel conductance with quinine (min^-1)
+const V_k0 = 30; # Nernst potential prefactor (mV)
+const V_n = -130; # nonspecific ion Nernst potential (mV)
+const alpha_g = 3; # channel opening constant due to germinant (min^-1)
+const beta = 0.6; # channel opening rate decay constant (min^-1)
+const V_0wt = -79; # initial membrane potential, wild-type (mV)
+const V_0ktrc = -81; # initial membrane potential, ΔktrC (mV)
+const V_0yugO = -80; # initial membrane potential, ΔyugO (mV)
+const gamma_e = 1; # extracellular potassium relaxation rate (min^-1)
+const F = 5.6; # membrane capacitance (mM/mV)
+const K_m = 8; # external media potassium (mM)
+const K_s = 235; # potassium threshold triggering germination (mM)
+const K_wt = 300; # average initial potassium concentration, wild-type (mM)
+const K_ktrc = 275; # average initial potassium concentration, ΔktrC (mM)
+const K_yugO = 280; # average initial potassium concentration, ΔyugO (mM)
+const sigma_wt = 15; # st. dev. of initial potassium concentration, wild type (mM)
+const sigma_ktrc = 15; # st. dev. of initial potassium concentration, ΔktrC (mM)
+const sigma_yugO = 35; # st. dev. of initial potassium concentration, ΔyugO  (mM)
+alpha = 0; # germinant not present
+alpha = alpha_g; # germinant present
 
-# Gate functions
-Veq=-0;
-αₙ(V) = (0.01 * (10-(V-Veq))) / (exp((10-(V-Veq))/10)-1);
-αₘ(V) = (0.1*(25-(V-Veq)))/(exp((25-(V-Veq))/10)-1);
-αₕ(V) = 0.07*exp(-(V-Veq)/20);
+p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
+V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO];
 
-βₙ(V) = 0.125*exp(-(V-Veq)/80);
-βₘ(V) = 4*exp(-(V-Veq)/18);
-βₕ(V) = 1/(exp((30-(V-Veq))/10)+1); 
-
-struct solution_euler
-    t::Vector{Float64}
-    u::Matrix{Float64}
-end
-
-struct solution
-    t::Vector{Float64}
-    V::Vector{Float64}
-    N4::Vector{Float64}
-    M3::Vector{Float64}
-    H::Vector{Float64}
-    intensitat::Vector{Float64}
-end
-
-struct solution_vars
-    t::Vector{Float64}
-    V::Vector{Float64}
-    N4::Vector{Float64}
-    M3::Vector{Float64}
-    H::Vector{Float64}
-
-    N0::Vector{Float64}
-    N1::Vector{Float64}
-    N2::Vector{Float64}
-    N3::Vector{Float64}
-    changes::Vector{Float64}
-    intensitat_vars::Vector{Float64}
-end
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
     n = round(Int, (tspan[2] - tspan[1]) / h)
     t = collect(tspan[1]:h:tspan[2])
     u = zeros(length(u0), n+1)
     u[:,1] .= u0
-    for i in 1:Int(100/h)
-        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
-    end
-    p[8] += 2.5;
-    for i in Int(100/h+1):Int(107/h)
-        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
-    end
-    p[8] += -2.5;
-    for i in Int(107/h+1):n
-        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i]) #+sqrt(step)*D*rand(d,1) # D es amplitud i d soroll gaussia.
-    end
-    # p[8] = 0;
-    # I_ext=0;
+    u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     return solution_euler(t,u)
 end
 
+struct solution_euler
+    t::Vector{Float64}
+    u::Matrix{Float64}
+end
+
+# struct solution
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     N4::Vector{Float64}
+#     M3::Vector{Float64}
+#     H::Vector{Float64}
+#     intensitat::Vector{Float64}
+# end
+
+# struct solution_vars
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     N4::Vector{Float64}
+#     M3::Vector{Float64}
+#     H::Vector{Float64}
+
+#     N0::Vector{Float64}
+#     N1::Vector{Float64}
+#     N2::Vector{Float64}
+#     N3::Vector{Float64}
+#     changes::Vector{Float64}
+#     intensitat_vars::Vector{Float64}
+# end
+#-------------------------------------------------------------- deterministic, model
+function spores_hh_det(u,p,t)
+    g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
+    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO = p;
+    V = u[1]
+    K_e = u[2]
+    K_i = u[3]
+    n = u[4]
+
+    # Nernst potential
+    Vk = V_k0* ln(K_e/K_i)
+
+    #Dynamical system
+    dV = -g_k * n^4 * (V - V_k) - g_n * n^4 * (V - V_n)
+    dK_e = F * g_k * n^4 * (V - V_k) + F * g_n * n^4 * (V - V_n) - gamma_e * (K_e - K_m)
+    dK_i = -F * g_k * n^4 * (V - V_n) - F * g_n * n^4 * (V - V_n) 
+    dn = alpha * (1 - n) - beta * n
+
+    return [dV,dK_e,dK_i,dn]
+end
+
+tspan = (0,300);
+h = 1e-3;
+sol_det = euler(spores_hh_det, u₀, p, tspan, h);
+
+# Plots
+plot(sol.t,sol.u[1,:])
+plot(sol.t,sol.u[2,:],label="K_e")
+plot!(sol.t,sol.u[3,:],label="K_i")
+plot(sol.t,sol.u[4,:],label="h")
 #------------------------------------------------------------- deterministic, states
 function hodg_hux_det_states(u, p, t)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
@@ -140,7 +165,7 @@ sol_det = euler(hodg_hux_det_states, u₀det, p, tspan, h);
 # plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
 # # h
 # plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
-# ----------------------------------------------------------------------binomial
+# ----------------------------------------------------------------------------------- binomial
 I_ext=-5;
 function channel_states_bin(N_tot, dt, t_tot, p)
     V_na, V_k, V_l, g_na, g_k, g_l, C, I_ext = p
@@ -279,7 +304,7 @@ function channel_states_bin(N_tot, dt, t_tot, p)
     end
     return solution(collect(0:dt:t_tot),V,N4,M3,H,intensitat)
 end
-#--------------------------------------------------------------------------------------------------------det 2 
+#-------------------------------------------------------------------------------------------------------- Markov
 I_ext=-5;
 
 function channel_states_markov(N_tot, dt, t_tot, p)
