@@ -38,7 +38,8 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     for i in 1:Int(3600/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
-    p[22]=p[7];
+    # p[22]=p[7];
+    p[22]=alpha_g;
     for i in Int(3601/h):Int(3781/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
@@ -47,6 +48,7 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
     p[22]=p[7];
+    p[22]=alpha_g;
     for i in Int(10801/h):Int(10980/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
@@ -63,14 +65,11 @@ struct solution_euler
     u::Matrix{Float64}
 end
 
-# struct solution_bin
-#     t::Vector{Float64}
-#     V::Vector{Float64}
-#     N4::Vector{Float64}
-#     M3::Vector{Float64}
-#     H::Vector{Float64}
-#     intensitat::Vector{Float64}
-# end
+struct solution_bin
+    t::Vector{Float64}
+    V::Vector{Float64}
+    N4::Vector{Float64}
+end
 
 # struct solution_mar
 #     t::Vector{Float64}
@@ -96,7 +95,7 @@ function spores_hh_det(u,p,t)
     n = u[4]
 
     # Nernst potential
-    V_k = V_k0*log(abs(K_e/K_i))
+    V_k = V_k0*log(K_e/K_i)
 
     #Dynamical system
     dV = -g_k * n^4 * (V - V_k) - g_n * n^4 * (V - V_n)
@@ -108,9 +107,11 @@ function spores_hh_det(u,p,t)
 end
 
 # 15 hores = 54000 s
-tspan = (0,14400);
-h = 1e-3;
-u₀_det=rand(4);
+nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
+k_i0=rand(nd);
+u₀_det=[-80,400,k_i0,rand()];
+tspan = (0,14440);
+h = 1e-4;
 sol_det = euler(spores_hh_det, u₀_det, p, tspan, h);
 
 # Plots
@@ -120,9 +121,9 @@ plot!(sol_det.t,sol_det.u[3,:],label="K_i")
 plot(sol_det.t,sol_det.u[4,:],label="n",ylabel="fraction of open subunits")
 
 #---------------------------------------------------------------- deterministic, states
-function hodg_hux_det_states(u, p, t)
+function spores_states(u, p, t)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
-    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO = p;
+    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
     V = u[1]
     K_e = u[2]
     K_i = u[3]
@@ -135,38 +136,331 @@ function hodg_hux_det_states(u, p, t)
     V_k = V_k0*log(abs(K_e/K_i))
 
     #Dynamical system
-    dV = -g_k * n^4 * (V - V_k) - g_n * n^4 * (V - V_n)
-    dK_e = F * g_k * n^4 * (V - V_k) + F * g_n * n^4 * (V - V_n) - gamma_e * (K_e - K_m)
-    dK_i = -F * g_k * n^4 * (V - V_n) - F * g_n * n^4 * (V - V_n) 
+    dV = -g_k * n₄^4 * (V - V_k) - g_n * n₄^4 * (V - V_n)
+    dK_e = F * g_k * n₄^4 * (V - V_k) + F * g_n * n₄^4 * (V - V_n) - gamma_e * (K_e - K_m)
+    dK_i = -F * g_k * n₄^4 * (V - V_n) - F * g_n * n₄^4 * (V - V_n) 
     # dn = alpha * (1 - n) - beta * n
 
-    dn₀ = -4*α(V)*n₀ + β(V)*n₁
-    dn₁ = -(3*α(V) + β(V))*n₁ + 4*α(V)*n₀ + 2*β(V)*n₂
-    dn₂ = -(2*α(V) + 2*β(V))*n₂ + 3*α(V)*n₁ + 3*β(V)*n₃
-    dn₃ = -(α(V)+3*β(V))*n₃ + 2*α(V)*n₂ + 4*β(V)*n₄
-    dn₄ = -4*β(V)*n₄ + α(V)*n₃
+    dn₀ = -4*alpha*n₀ + beta*n₁
+    dn₁ = -(3*alpha + beta)*n₁ + 4*alpha*n₀ + 2*beta*n₂
+    dn₂ = -(2*alpha + 2*beta)*n₂ + 3*alpha*n₁ + 3*beta*n₃
+    dn₃ = -(alpha+3*beta)*n₃ + 2*alpha*n₂ + 4*beta*n₄
+    dn₄ = -4*beta*n₄ + alpha*n₃
 
     @SVector [dV, dK_e, dK_i, dn₀, dn₁, dn₂, dn₃, dn₄]
 end
 # Initial conditions
-u₀_states=rand(4);
-
-tspan = (0,1000);
+u₀_states=rand(8);
+tspan = (0,14400);
 h = 1e-3;
 
-sol_states = euler(hodg_hux_det_states, u₀_states, p, tspan, h);
+sol_states = euler(spores_states, u₀_states, p, tspan, h);
 
 plot(sol_states.t,sol_states.u[1,:],label="V")
 plot!(sol_states.t,sol_states.u[2,:],label=L"K_e")
 plot!(sol_states.t,sol_states.u[3,:],label=L"K_i")
 plot!(sol_states.t,sol_states.u[8,:],label=L"n_4")
+# ---------------------------------------------------------------------------------------- binomial
 
+function spores_states_bin(N_tot, dt, t_tot, p)
+    g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
+    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
 
+    # integration Parameters
+    total_steps = Int(round(t_tot/dt+1));
 
-# plot(sol_det.t,sol_det.u[1,:],label="V")
-# # n
-# plot(sol_det.t,sol_det.u[6,:],label=L"n_4") #states
-# # m
-# plot!(sol_det.t,sol_det.u[10,:],label=L"m_3") #states
-# # h
-# plot!(sol_det.t,sol_det.u[11,:],label=L"h") #states
+    # iniciar vectors
+    V = zeros(total_steps)
+    N0 = zeros(total_steps)
+    N1 = zeros(total_steps)
+    N2 = zeros(total_steps)
+    N3 = zeros(total_steps)
+    N4 = zeros(total_steps)
+
+    # Initial conditions
+    V[1] = rand()
+    intensitat[1]=0;
+    n0 = rand(5)
+    n0 = round.(n0/sum(n0)*N_tot); 
+    N0[1] = n0[1]
+    N1[1] = n0[2]
+    N2[1] = n0[3]
+    N3[1] = n0[4]
+    N4[1] = n0[5]
+
+    for i in 2:total_steps
+        
+        # I_ext=-5;
+        # if i >= 1/dt*100 && i <= 1/dt*107
+        #     I_ext=1.8;
+        # end
+
+        # Evolucio canals 
+        N0[i] = N0[i-1] + rand(Binomial(N1[i-1],beta*dt)) - rand(Binomial(N0[i-1],4*alpha*dt)) 
+        N1[i] = N1[i-1] + rand(Binomial(N0[i-1],4*alpha*dt)) + rand(Binomial(N2[i-1],2*beta*dt)) - rand(Binomial(N1[i-1],3*alpha*dt)) -rand(Binomial(N1[i-1],beta*dt))
+        N2[i] = N2[i-1] + rand(Binomial(N1[i-1],3*alpha*dt)) + rand(Binomial(N3[i-1],3*beta*dt)) - rand(Binomial(N2[i-1],2*alpha*dt)) -rand(Binomial(N2[i-1],2*beta*dt))
+        N3[i] = N3[i-1] + rand(Binomial(N2[i-1],2*alpha*dt)) + rand(Binomial(N4[i-1],4*beta*dt)) - rand(Binomial(N3[i-1],alpha*dt)) - rand(Binomial(N3[i-1],3*beta*dt))
+        N4[i] = N4[i-1] + rand(Binomial(N3[i-1],alpha*dt)) - rand(Binomial(N4[i-1],4*beta*dt))
+       
+        # Evitem que hi hagi estats sense sentit físic
+        if N0[i] > N_tot
+            N0[i]=N_tot
+            N1[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N1[i] > N_tot
+            N1[i]=N_tot
+            N0[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N2[i]>N_tot
+            N2[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N3[i] > N_tot
+            N3[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        if N4[i] > N_tot
+            N4[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        V_k = V_k0*log(abs(K_e/K_i))
+        # ODE system
+        V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i] - V_k) - g_n * N4[i-1]^4 * (V[i] - V_n))
+    end
+    return solution_bin(collect(0:dt:t_tot),V,N4)
+end
+#--------------------------------------------------------------------------------------------------------det 2 
+I_ext=-5;
+
+function channel_states_markov(N_tot, dt, t_tot, p)
+    g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
+    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
+
+    # integration Parameters
+    total_steps = Int(round(t_tot/dt+1));
+
+    # iniciar vectors
+    V = zeros(total_steps)
+    N0 = zeros(total_steps)
+    N1 = zeros(total_steps)
+    N2 = zeros(total_steps)
+    N3 = zeros(total_steps)
+    N4 = zeros(total_steps)
+
+    # Initial conditions
+    V[1] = u₀[1];
+    # n0 = rand(5)
+    n0=u₀[2:6];
+    n0 = round.(n0/sum(n0)*N_tot); 
+
+    N0[1] = n0[1]
+    N1[1] = n0[2]
+    N2[1] = n0[3]
+    N3[1] = n0[4]
+    N4[1] = n0[5]
+    
+    for i in 2:total_steps
+
+        # t/dt=nº steps = 500/0.5e-5 = 10^8
+        # steps/s = 1/dt
+
+        I_ext=-5;
+        if i >= 1/dt*100 && i <= 1/dt*107
+            I_ext=2.7;
+        end
+
+        if i>=1/dt*107
+            I_ext=-5;
+        end
+
+        intensitat_vars[i]=I_ext;
+
+        #Probabilities definition
+        # N0[i] = N0[i-1] +p1c-p0o
+        pn1c=βₙ(V[i-1])*dt; 
+        pn0o=4*αₙ(V[i-1])*dt;
+
+        # N1[i] = N1[i-1] + p0o + p2c - p1o - p1c
+        pn2c = 2*βₙ(V[i-1])*dt;
+        pn1o = 3*αₙ(V[i-1])*dt;
+
+        # N2[i] = N2[i-1] + p1o + p3c - p2o - p2c
+        pn3c = 3*βₙ(V[i-1])*dt;
+        pn2o = 2*αₙ(V[i-1])*dt;
+
+        # N3[i] = N3[i-1] + p2o + p4c - p3o - p3c
+        pn4c = 4*βₙ(V[i-1])*dt;
+        pn3o = αₙ(V[i-1])*dt;
+
+        # N4[i] = N4[i-1] + p3o - p4c
+
+        # M0[i] = M0[i-1] + pm1c - pm0o
+        pm1c = βₘ(V[i-1])*dt;
+        pm0o = 3*αₘ(V[i-1])*dt;
+
+        # M1[i] = M1[i-1] + pm0o + pm2c - pm1o - pm1c
+        pm2c =2*βₘ(V[i-1])*dt;
+        pm1o =2*αₘ(V[i-1])*dt;
+
+        # M2[i] = M2[i-1] + pm1o + pm3c - pm2o - pm2c
+        pm3c = 3*βₘ(V[i-1])*dt;
+        pm2o = αₘ(V[i-1])*dt;
+
+        # M3[i] = M3[i-1] + p2o - p3c
+        
+        # H[i] = H[i-1] + pho - phc
+        pho = αₕ(V[i-1])*dt;
+        phc=βₕ(V[i-1])*dt;
+        # phc= (1 - pho)*dt;
+
+        n00=N0[i-1];
+        n1=N1[i-1];
+        n2=N2[i-1];
+        n3=N3[i-1];
+        n4=N4[i-1];
+        m00=M0[i-1];
+        m1=M1[i-1];
+        m2=M2[i-1];
+        m3=M3[i-1];
+        h=H[i-1];
+
+        ii=changes[i-1];
+        
+        # N channels evolution
+        if rand(Uniform(0,1))<pn0o*n00
+            # n0 = N0[i-1] - 1;
+            n0 = n00 - 1;
+            n1 = n1 + 1; 
+            ii=ii+1;
+        end        
+        if rand(Uniform(0,1))<pn1c*n1
+            n1 = n1- 1;
+            n0 = n00 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn1o*n1
+            n1 = n1 - 1;
+            n2 = n2 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn2c*n2
+            n2 = n2 - 1;
+            n1 = n1 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn2o*n2
+            n2 = n2 - 1;
+            n3 = n3 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn3c*n3
+            n3 = n3 - 1;
+            n2 = n2 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn3o*n3
+            n3 = n3 - 1;
+            n4 = n4 + 1;
+            ii=ii+1;
+        end
+        if rand(Uniform(0,1))<pn4c*n4
+            n4 = n4 - 1;
+            n3 = n3 + 1;
+            ii=ii+1;
+        end
+        # Values update
+        N0[i]=n00;
+        N1[i]=n1;
+        N2[i]=n2;
+        N3[i]=n3;
+        N4[i]=n4;
+
+        # Condition to avoid physically impossible states
+        if N0[i] > N_tot
+            N0[i]=N_tot
+            N1[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N0[i] < 0
+            N0[i]=0
+        end
+        if N1[i] > N_tot
+            N1[i]=N_tot
+            N0[i]=0;
+            N2[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N1[i] < 0
+            N1[i]=0
+        end
+        if N2[i]>N_tot
+            N2[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N3[i]=0;
+            N4[i]=0;
+        end
+        if N2[i] < 0
+            N2[i]=0
+        end
+        if N3[i] > N_tot
+            N3[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        if N3[i] < 0
+            N3[i]=0
+        end
+        if N4[i] > N_tot
+            N4[i]=N_tot
+            N0[i]=0;
+            N1[i]=0;
+            N2[i]=0;
+        end
+        if N4[i] < 0
+            N4[i]=0
+        end
+
+        I_na = g_na * M3[i-1]/N_tot * H[i-1]/N_tot * (V[i-1] - V_na) ; #println(I_na)
+        I_k = g_k * N4[i-1]/N_tot * (V[i-1] - V_k); 
+        I_l = g_l * (V[i-1] - V_l); 
+        # I_l=0;
+
+        # ODE system
+        V[i] = V[i-1] + dt *  1 / C * (I_ext - I_na - I_k - I_l)
+        # println(V[i])
+    end
+    return solution_mar(collect(0:dt:t_tot),V,N4,N0,N1,N2,N3)
+end
+I_ext=-5;
+# -----------------------------------------------------------Simulations
+N_tot = 500;
+dt = 0.5e-4;
+dt_markov=0.5e-4;
+t_tot = 300;
+myrange = 1:100:Int(round(t_tot/dt));
+
+# Binomial simulation
+sol_bin = channel_states_bin(N_tot, dt, t_tot, p);
+
+# Markov simulation
+u₀ = @SVector rand(11);
+tspan = (0, 100);
+sol_mar = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
