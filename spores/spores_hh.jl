@@ -68,23 +68,24 @@ end
 struct solution_bin
     t::Vector{Float64}
     V::Vector{Float64}
+    Ke::Vector{Float64}
+    Ki::Vector{Float64}
     N4::Vector{Float64}
 end
 
-# struct solution_mar
-#     t::Vector{Float64}
-#     V::Vector{Float64}
-#     N4::Vector{Float64}
-#     M3::Vector{Float64}
-#     H::Vector{Float64}
+struct solution_mar
+    t::Vector{Float64}
+    V::Vector{Float64}
+    Ke::Vector{Float64}
+    Ki::Vector{Float64}
+    N4::Vector{Float64}
 
-#     N0::Vector{Float64}
-#     N1::Vector{Float64}
-#     N2::Vector{Float64}
-#     N3::Vector{Float64}
-#     changes::Vector{Float64}
-#     intensitat_vars::Vector{Float64}
-# end
+    N0::Vector{Float64}
+    N1::Vector{Float64}
+    N2::Vector{Float64}
+    N3::Vector{Float64}
+    changes::Vector{Float64}
+end
 #-------------------------------------------------------------- deterministic, model
 function spores_hh_det(u,p,t)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
@@ -107,9 +108,10 @@ function spores_hh_det(u,p,t)
 end
 
 # 15 hores = 54000 s
+k_e0=400;
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
 k_i0=rand(nd);
-u₀_det=[-80,400,k_i0,rand()];
+u₀_det=[-80,k_e0,k_i0,rand()];
 tspan = (0,14440);
 h = 1e-4;
 sol_det = euler(spores_hh_det, u₀_det, p, tspan, h);
@@ -150,7 +152,14 @@ function spores_states(u, p, t)
     @SVector [dV, dK_e, dK_i, dn₀, dn₁, dn₂, dn₃, dn₄]
 end
 # Initial conditions
-u₀_states=rand(8);
+n0 = rand(4);
+ns0=[n0; rand()];
+# h0 = rand();
+ns0=ns0/sum(ns0);
+k_e0=400;
+nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
+k_i0=rand(nd);
+u₀_states=[-80,k_e0,k_i0,ns0];
 tspan = (0,14400);
 h = 1e-3;
 
@@ -161,7 +170,6 @@ plot!(sol_states.t,sol_states.u[2,:],label=L"K_e")
 plot!(sol_states.t,sol_states.u[3,:],label=L"K_i")
 plot!(sol_states.t,sol_states.u[8,:],label=L"n_4")
 # ---------------------------------------------------------------------------------------- binomial
-
 function spores_states_bin(N_tot, dt, t_tot, p)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
     V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
@@ -171,6 +179,8 @@ function spores_states_bin(N_tot, dt, t_tot, p)
 
     # iniciar vectors
     V = zeros(total_steps)
+    Ke=zeros(total_steps)
+    Ki=zeros(total_steps)
     N0 = zeros(total_steps)
     N1 = zeros(total_steps)
     N2 = zeros(total_steps)
@@ -179,7 +189,11 @@ function spores_states_bin(N_tot, dt, t_tot, p)
 
     # Initial conditions
     V[1] = rand()
-    intensitat[1]=0;
+    k_e0=400;
+    Ke[1]=k_e0;
+    nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
+    k_i0=rand(nd);
+    Ki[1]=k_i0;
     n0 = rand(5)
     n0 = round.(n0/sum(n0)*N_tot); 
     N0[1] = n0[1]
@@ -189,11 +203,12 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     N4[1] = n0[5]
 
     for i in 2:total_steps
-        
-        # I_ext=-5;
-        # if i >= 1/dt*100 && i <= 1/dt*107
-        #     I_ext=1.8;
-        # end
+
+        # Germinant pulses at 1h and 3h
+        alpha = 0;
+        if (i >=1/dt*3600 && i <= 1/dt*3781) || (i >=1/dt*10801 && i <= 1/dt*10980)
+            alpha = alpha_g
+        end
 
         # Evolucio canals 
         N0[i] = N0[i-1] + rand(Binomial(N1[i-1],beta*dt)) - rand(Binomial(N0[i-1],4*alpha*dt)) 
@@ -236,15 +251,17 @@ function spores_states_bin(N_tot, dt, t_tot, p)
             N1[i]=0;
             N2[i]=0;
         end
+
         V_k = V_k0*log(abs(K_e/K_i))
         # ODE system
-        V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i] - V_k) - g_n * N4[i-1]^4 * (V[i] - V_n))
+        V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
+        Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1]^4 * (V[i-1] - V_k) + F * g_n * N4[i-1]^4 * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
+        Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1]^4 * (V[i-1] - V_n) - F * g_n * N4[i-1]^4 * (V[i-1] - V_n) )
     end
-    return solution_bin(collect(0:dt:t_tot),V,N4)
+    return solution_bin(collect(0:dt:t_tot),V,Ke,Ki,N4)
 end
 #--------------------------------------------------------------------------------------------------------det 2 
-I_ext=-5;
-
+alpha=0;
 function channel_states_markov(N_tot, dt, t_tot, p)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
     V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
@@ -254,18 +271,24 @@ function channel_states_markov(N_tot, dt, t_tot, p)
 
     # iniciar vectors
     V = zeros(total_steps)
+    Ke=zeros(total_steps)
+    Ki=zeros(total_steps)
     N0 = zeros(total_steps)
     N1 = zeros(total_steps)
     N2 = zeros(total_steps)
     N3 = zeros(total_steps)
     N4 = zeros(total_steps)
+    changes=zeros(total_steps)
 
     # Initial conditions
-    V[1] = u₀[1];
-    # n0 = rand(5)
-    n0=u₀[2:6];
+    V[1] = rand()
+    k_e0=400;
+    Ke[1]=k_e0;
+    nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
+    k_i0=rand(nd);
+    Ki[1]=k_i0;
+    n0 = rand(5)
     n0 = round.(n0/sum(n0)*N_tot); 
-
     N0[1] = n0[1]
     N1[1] = n0[2]
     N2[1] = n0[3]
@@ -274,69 +297,36 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     
     for i in 2:total_steps
 
-        # t/dt=nº steps = 500/0.5e-5 = 10^8
-        # steps/s = 1/dt
-
-        I_ext=-5;
-        if i >= 1/dt*100 && i <= 1/dt*107
-            I_ext=2.7;
+        # Germinant pulses at 1h and 3h
+        alpha = 0;
+        if (i >=1/dt*3600 && i <= 1/dt*3781) || (i >=1/dt*10801 && i <= 1/dt*10980)
+            alpha = alpha_g
         end
-
-        if i>=1/dt*107
-            I_ext=-5;
-        end
-
-        intensitat_vars[i]=I_ext;
 
         #Probabilities definition
         # N0[i] = N0[i-1] +p1c-p0o
-        pn1c=βₙ(V[i-1])*dt; 
-        pn0o=4*αₙ(V[i-1])*dt;
+        pn1c=beta*dt; 
+        pn0o=4*alpha*dt;
 
         # N1[i] = N1[i-1] + p0o + p2c - p1o - p1c
-        pn2c = 2*βₙ(V[i-1])*dt;
-        pn1o = 3*αₙ(V[i-1])*dt;
+        pn2c = 2*beta*dt;
+        pn1o = 3*alpha*dt;
 
         # N2[i] = N2[i-1] + p1o + p3c - p2o - p2c
-        pn3c = 3*βₙ(V[i-1])*dt;
-        pn2o = 2*αₙ(V[i-1])*dt;
+        pn3c = 3*beta*dt;
+        pn2o = 2*alpha*dt;
 
         # N3[i] = N3[i-1] + p2o + p4c - p3o - p3c
-        pn4c = 4*βₙ(V[i-1])*dt;
-        pn3o = αₙ(V[i-1])*dt;
+        pn4c = 4*beta*dt;
+        pn3o = alpha*dt;
 
         # N4[i] = N4[i-1] + p3o - p4c
-
-        # M0[i] = M0[i-1] + pm1c - pm0o
-        pm1c = βₘ(V[i-1])*dt;
-        pm0o = 3*αₘ(V[i-1])*dt;
-
-        # M1[i] = M1[i-1] + pm0o + pm2c - pm1o - pm1c
-        pm2c =2*βₘ(V[i-1])*dt;
-        pm1o =2*αₘ(V[i-1])*dt;
-
-        # M2[i] = M2[i-1] + pm1o + pm3c - pm2o - pm2c
-        pm3c = 3*βₘ(V[i-1])*dt;
-        pm2o = αₘ(V[i-1])*dt;
-
-        # M3[i] = M3[i-1] + p2o - p3c
-        
-        # H[i] = H[i-1] + pho - phc
-        pho = αₕ(V[i-1])*dt;
-        phc=βₕ(V[i-1])*dt;
-        # phc= (1 - pho)*dt;
 
         n00=N0[i-1];
         n1=N1[i-1];
         n2=N2[i-1];
         n3=N3[i-1];
         n4=N4[i-1];
-        m00=M0[i-1];
-        m1=M1[i-1];
-        m2=M2[i-1];
-        m3=M3[i-1];
-        h=H[i-1];
-
         ii=changes[i-1];
         
         # N channels evolution
@@ -387,6 +377,7 @@ function channel_states_markov(N_tot, dt, t_tot, p)
         N2[i]=n2;
         N3[i]=n3;
         N4[i]=n4;
+        changes[i-1]=ii;
 
         # Condition to avoid physically impossible states
         if N0[i] > N_tot
@@ -438,29 +429,28 @@ function channel_states_markov(N_tot, dt, t_tot, p)
             N4[i]=0
         end
 
-        I_na = g_na * M3[i-1]/N_tot * H[i-1]/N_tot * (V[i-1] - V_na) ; #println(I_na)
-        I_k = g_k * N4[i-1]/N_tot * (V[i-1] - V_k); 
-        I_l = g_l * (V[i-1] - V_l); 
-        # I_l=0;
-
+        V_k = V_k0*log(abs(K_e/K_i))
         # ODE system
-        V[i] = V[i-1] + dt *  1 / C * (I_ext - I_na - I_k - I_l)
-        # println(V[i])
+        V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
+        Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1]^4 * (V[i-1] - V_k) + F * g_n * N4[i-1]^4 * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
+        Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1]^4 * (V[i-1] - V_n) - F * g_n * N4[i-1]^4 * (V[i-1] - V_n) )
     end
-    return solution_mar(collect(0:dt:t_tot),V,N4,N0,N1,N2,N3)
+    avg=sum(changes)/total_steps;
+    print("mar_avg: "*string(avg))
+    return solution_mar(collect(0:dt:t_tot),V,Ke,Ki,N4,N0,N1,N2,N3,changes)
 end
-I_ext=-5;
+alpha=0;
 # -----------------------------------------------------------Simulations
 N_tot = 500;
 dt = 0.5e-4;
 dt_markov=0.5e-4;
-t_tot = 300;
+t_tot = 14400;
 myrange = 1:100:Int(round(t_tot/dt));
 
 # Binomial simulation
-sol_bin = channel_states_bin(N_tot, dt, t_tot, p);
+sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
 
 # Markov simulation
 u₀ = @SVector rand(11);
-tspan = (0, 100);
-sol_mar = channel_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+tspan = (0, 14400);
+sol_mar = spores_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
