@@ -115,7 +115,7 @@ function spores_hh_det(u,p,t)
 end
 
 # myrange_det = 1:1000:Int(round(t_tot/h_det));
-k_e0=100; #0,100,200,400
+k_e0=400; #0,100,200,400
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
 k_i0=rand(nd);
 V_0=V_k0*log(k_e0/K_wt) 
