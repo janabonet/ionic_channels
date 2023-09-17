@@ -115,18 +115,18 @@ function spores_hh_det(u,p,t)
 end
 
 # myrange_det = 1:1000:Int(round(t_tot/h_det));
-k_e0=400; #0,100,200,400
+k_e0=200; #0,100,200,400
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
 k_i0=rand(nd);
-V_0=-V_k0*log(k_e0/K_wt) #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
-# u₀_det=[-20,k_e0,K_wt,rand()];
-u₀_det=[V_0wt,k_e0,K_wt,rand()];
-# tspan = (0,21600);
-# t_tot=21600;
-tspan = (0,5000);
-t_tot=5000;
+V_0=-V_k0*log(k_e0/K_wt) 
+#calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
+u₀_det=[-V_0,k_e0,K_wt,rand()];
+# u₀_det=[V_0wt,k_e0,K_wt,rand()];
+tspan = (0,21600);
+t_tot=21600;
+# t_tot=30;
 h_det = 0.5e-3;
-myrange_det=1:1000:Int(round(t_tot/h_det));
+myrange_det=1:100:Int(round(t_tot/h_det));
 sol_det = euler(spores_hh_det, u₀_det, p, tspan, h_det);
 
 # Plots
@@ -140,8 +140,10 @@ plot!(sol_det.t[myrange_det],sol_det.u[3,(myrange_det)],label="K_i",xlabel="t (s
 ylabel = "Concentration (mM)")
 # plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
 
-savefig(f_v,"V_ke"*string(k_e0))
-savefig(fig_conc,"conc_"*string(k_e0))
+savefig(f_v,"Vn_ke"*string(k_e0))
+savefig(f_v,"Vn_zoom_ke"*string(k_e0))
+savefig(fig_conc,"concn_ke"*string(k_e0))
+
 
 #---------------------------------------------------------------- deterministic, states
 function spores_states(u, p, t)
