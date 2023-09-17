@@ -115,16 +115,16 @@ function spores_hh_det(u,p,t)
 end
 
 # myrange_det = 1:1000:Int(round(t_tot/h_det));
-k_e0=200; #0,100,200,400
+k_e0=100; #0,100,200,400
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
 k_i0=rand(nd);
-V_0=-V_k0*log(k_e0/K_wt) 
+V_0=V_k0*log(k_e0/K_wt) 
 #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
-u₀_det=[-V_0,k_e0,K_wt,rand()];
+u₀_det=[V_0,k_e0,K_wt,rand()];
 # u₀_det=[V_0wt,k_e0,K_wt,rand()];
 tspan = (0,21600);
 t_tot=21600;
-# t_tot=30;
+t_tot=30;
 h_det = 0.5e-3;
 myrange_det=1:100:Int(round(t_tot/h_det));
 sol_det = euler(spores_hh_det, u₀_det, p, tspan, h_det);
