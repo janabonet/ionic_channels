@@ -13,7 +13,8 @@ const V_0wt = -79; # initial membrane potential, wild-type (mV)
 const V_0ktrc = -81; # initial membrane potential, ΔktrC (mV)
 const V_0yugO = -80; # initial membrane potential, ΔyugO (mV)
 const gamma_e = 1; # extracellular potassium relaxation rate (min^-1)
-const F = 5.6; # membrane capacitance (mM/mV)
+# const F = 5.6; # membrane capacitance (mM/mV)
+F = 5.6/2;
 const K_m = 8; # external media potassium (mM)
 const K_s = 235; # potassium threshold triggering germination (mM)
 const K_wt = 300; # average initial potassium concentration, wild-type (mM)
@@ -33,28 +34,34 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     n = round(Int, (tspan[2] - tspan[1]) / h)
     t = collect(tspan[1]:h:tspan[2])
     u = zeros(length(u0), n+1)
+    alph =  zeros(length(u))
     u[:,1] .= u0
     p[22]=0;
     for i in 1:Int(3600/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=4;
     for i in Int(3600/h+1):Int(3780/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     p[22]=0;
     for i in Int(3780/h+1):Int(10800/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=3.4;
     for i in Int(10800/h+1):Int(10980/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     p[22]=0;
     for i in Int(10980/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     # p[22]=alpha_g;
     # for i in Int(18000/h+1):Int(18180/h+1)
@@ -64,13 +71,15 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     # for i in Int(18180/h+1):n
     #     u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     # end
-    return solution_euler(t,u)
+    return solution_euler(t,u,alph)
 end
 
 struct solution_euler
     t::Vector{Float64}
     u::Matrix{Float64}
+    alph::Vector{Float64}
 end
+
 
 struct solution_bin
     t::Vector{Float64}
@@ -115,87 +124,39 @@ function spores_hh_det(u,p,t)
 end
 
 # myrange_det = 1:1000:Int(round(t_tot/h_det));
-k_e0=400; #0,100,200,400
+k_e0=K_m; #0,100,200,400
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
-k_i0=rand(nd);
+# k_i0=rand(nd);
+k_i0 = 250;
 V_0=V_k0*log(k_e0/K_wt) 
 #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
-u₀_det=[V_0,k_e0,K_wt,rand()];
-# u₀_det=[V_0wt,k_e0,K_wt,rand()];
+# u₀_det=[V_0,k_e0,K_wt,rand()];
+u₀_det=[V_0wt,k_e0,k_i0,0.0];
 tspan = (0,21600);
 t_tot=21600;
-t_tot=30;
+# t_tot=30;
 h_det = 0.5e-3;
 myrange_det=1:100:Int(round(t_tot/h_det));
 sol_det = euler(spores_hh_det, u₀_det, p, tspan, h_det);
 
 # Plots
+f_alph = plot(sol_det.t[myrange_det],sol_det.alph[myrange_det],title="k_i0 = "*string(k_i0))
+
 f_v=plot(sol_det.t[myrange_det],sol_det.u[1,(myrange_det)], label = "V",xlabel="t (s)", 
-ylabel="Membrane potential (mV)")
+ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
 
 # plot!(xaxis="hores", xticks=0:(h/3600):1000)
-fig_conc=plot(sol_det.t[myrange_det],sol_det.u[2,(myrange_det)],label="K_e",xlabel="t (s)",
-ylabel = "Concentration (mM)")
-plot!(sol_det.t[myrange_det],sol_det.u[3,(myrange_det)],label="K_i",xlabel="t (s)", 
-ylabel = "Concentration (mM)")
+fig_conc=plot(sol_det.t[myrange_det],sol_det.u[3,(myrange_det)],label="K_i",xlabel="t (s)", 
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
+plot!(sol_det.t[myrange_det],sol_det.u[2,(myrange_det)],label="K_e",xlabel="t (s)",
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
+
 # plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
 
 savefig(f_v,"Vn_ke"*string(k_e0))
 savefig(f_v,"Vn_zoom_ke"*string(k_e0))
 savefig(fig_conc,"concn_ke"*string(k_e0))
 
-
-#---------------------------------------------------------------- deterministic, states
-function spores_states(u, p, t)
-    g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
-    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
-    V = u[1]
-    K_e = u[2]
-    K_i = u[3]
-    n₀ = u[4]
-    n₁ = u[5]
-    n₂ = u[6]
-    n₃ = u[7]
-    n₄ = u[8]
-
-    V_k = V_k0*log(abs(K_e/K_i))
-
-    #Dynamical system
-    dV = -g_k * n₄^4 * (V - V_k) - g_n * n₄^4 * (V - V_n)
-    dK_e = F * g_k * n₄^4 * (V - V_k) + F * g_n * n₄^4 * (V - V_n) - gamma_e * (K_e - K_m)
-    dK_i = -F * g_k * n₄^4 * (V - V_n) - F * g_n * n₄^4 * (V - V_n) 
-    # dn = alpha * (1 - n) - beta * n
-
-    dn₀ = -4*alpha*n₀ + beta*n₁
-    dn₁ = -(3*alpha + beta)*n₁ + 4*alpha*n₀ + 2*beta*n₂
-    dn₂ = -(2*alpha + 2*beta)*n₂ + 3*alpha*n₁ + 3*beta*n₃
-    dn₃ = -(alpha+3*beta)*n₃ + 2*alpha*n₂ + 4*beta*n₄
-    dn₄ = -4*beta*n₄ + alpha*n₃
-
-    @SVector [dV, dK_e, dK_i, dn₀, dn₁, dn₂, dn₃, dn₄]
-end
-# Initial conditions
-n0 = rand(4);
-ns0=[n0; rand()];
-# h0 = rand();
-ns0=ns0/sum(ns0);
-k_e0=400;
-nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
-k_i0=rand(nd);
-u₀_states=[V_0wt,k_e0,k_i0,ns0[1],ns0[2],ns0[3],ns0[4],ns0[5]];
-tspan = (0,14400);
-h = 1e-3;
-# t_hores=sol_det.t*h/3600;
-# t_hores=t_hores[1:1000];
-tot=Int(round(4*3600/h));
-
-sol_states = euler(spores_states, u₀_states, p, tspan, h);
-
-# plot(sol_det.t[1:1000],sol_det.u[1,1:1000], label = "V")
-plot(sol_states.t,sol_states.u[1,:],label="V")
-plot(sol_states.t,sol_states.u[2,:],label=L"K_e")
-plot!(sol_states.t,sol_states.u[3,:],label=L"K_i")
-plot(sol_states.t,sol_states.u[8,1:100000],label=L"n_4")
 # ---------------------------------------------------------------------------------------- binomial
 function spores_states_bin(N_tot, dt, t_tot, p)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
