@@ -132,7 +132,7 @@ end
 k_e0=K_m; #0,100,200,400
 nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
 # k_i0=rand(nd);
-k_i0 = 350;
+k_i0 = 250;
 V_0=V_k0*log(k_e0/K_wt) 
 #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
 # u₀_det=[V_0,k_e0,K_wt,rand()];
