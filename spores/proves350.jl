@@ -13,8 +13,8 @@ const V_0wt = -79; # initial membrane potential, wild-type (mV)
 const V_0ktrc = -81; # initial membrane potential, ΔktrC (mV)
 const V_0yugO = -80; # initial membrane potential, ΔyugO (mV)
 const gamma_e = 1; # extracellular potassium relaxation rate (min^-1)
-# const F = 5.6; # membrane capacitance (mM/mV)
-F = 5.6/3.3;
+const F = 5.6; # membrane capacitance (mM/mV)
+# F = 5.6/3.3;
 const K_m = 8; # external media potassium (mM)
 const K_s = 235; # potassium threshold triggering germination (mM)
 const K_wt = 300; # average initial potassium concentration, wild-type (mM)
@@ -29,6 +29,7 @@ alpha = 0; # germinant not present
 p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
 V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha];
 
+pols=7;
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
     n = round(Int, (tspan[2] - tspan[1]) / h)
@@ -36,6 +37,7 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     u = zeros(length(u0), n+1)
     alph =  zeros(length(u))
     u[:,1] .= u0
+    pols=7
     p[22]=0;
     for i in 1:Int(3600/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
@@ -43,34 +45,37 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     end
     p[22]=alpha_g;
     # p[22]=4;
-    for i in Int(3600/h+1):Int(3780/h+1)
+    # 3780
+    for i in Int(3600/h+1):Int((3600+pols)/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    for i in Int(3780/h+1):Int(10800/h+1)
+    for i in Int((3600+pols)/h+1):Int(10800/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=3.4;
-    for i in Int(10800/h+1):Int(10980/h+1)
+    # 10980
+    for i in Int(10800/h+1):Int((10800+pols)/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    for i in Int(10980/h+1):n
+    for i in Int((10800+pols)/h+1):Int(18000/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
-    # p[22]=alpha_g;
-    # for i in Int(18000/h+1):Int(18180/h+1)
-    #     u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
-    # end
-    # p[22]=0;
-    # for i in Int(18180/h+1):n
-    #     u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
-    # end
+    p[22]=alpha_g;
+    # 18180
+    for i in Int(18000/h+1):Int((18000+pols)/h+1)
+        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+    end
+    p[22]=0;
+    for i in Int((18000+pols)/h+1):n
+        u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+    end
     return solution_euler(t,u,alph)
 end
 
@@ -147,12 +152,13 @@ ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
 
 # plot!(xaxis="hores", xticks=0:(h/3600):1000)
 fig_conc=plot(sol_det.t[myrange_det],sol_det.u[3,(myrange_det)],label="K_i",xlabel="t (s)", 
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" s")
 plot!(sol_det.t[myrange_det],sol_det.u[2,(myrange_det)],label="K_e",xlabel="t (s)",
 ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
 
 # plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
 
-savefig(f_v,"Vn_ke"*string(k_e0))
-savefig(f_v,"Vn_zoom_ke"*string(k_e0))
-savefig(fig_conc,"concn_ke"*string(k_e0))
+savefig(f_v,"V_ki"*string(k_i0))
+savefig(f_v,"V_zoom_ki"*string(k_i0))
+savefig(fig_conc,"conc_ki"*string(k_i0)*"_polsos"*string(pols)*"s")
+
