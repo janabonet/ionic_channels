@@ -1,5 +1,4 @@
 using Plots, Distributions, LaTeXStrings, DifferentialEquations,StaticArrays
-
 # Parameters
 const g_k = 30; # potassium channel conductance (min^-1)
 const g_kq = 1; # potassium channel conductance with quinine (min^-1)
@@ -28,8 +27,8 @@ alpha = 0; # germinant not present
 
 p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
 V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha];
+pols=3;
 
-pols=7;
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
     n = round(Int, (tspan[2] - tspan[1]) / h)
@@ -39,41 +38,41 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     u[:,1] .= u0
     pols=3
     p[22]=0;
-    for i in 1:Int(3600/h)
+    @inbounds for i in 1:Int(3600/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=4;
     # 3780
-    for i in Int(3600/h+1):Int((3600+pols)/h+1)
+    @inbounds for i in Int(3600/h+1):Int((3600+pols)/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    for i in Int((3600+pols)/h+1):Int(10800/h+1)
+    @inbounds for i in Int((3600+pols)/h+1):Int(10800/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=3.4;
     # 10980
-    for i in Int(10800/h+1):Int((10800+pols)/h+1)
+    @inbounds for i in Int(10800/h+1):Int((10800+pols)/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    for i in Int((10800+pols)/h+1):Int(18000/h+1)
+    @inbounds for i in Int((10800+pols)/h+1):Int(18000/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # 18180
-    for i in Int(18000/h+1):Int((18000+pols)/h+1)
+    @inbounds for i in Int(18000/h+1):Int((18000+pols)/h+1)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
     p[22]=0;
-    for i in Int((18000+pols)/h+1):n
+    @inbounds for i in Int((18000+pols)/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
     return solution_euler(t,u,alph)
@@ -182,10 +181,12 @@ function spores_states_bin(N_tot, dt, t_tot, p)
 
     # Initial conditions
     V[1] = rand()
-    k_e0=400;
+    k_e0=K_m;
+    K_e = K_m;
     Ke[1]=k_e0;
     nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
-    k_i0=rand(nd);
+    # k_i0=rand(nd);
+    k_i0 = 300;
     Ki[1]=k_i0;
     n0 = rand(5)
     n0 = round.(n0/sum(n0)*N_tot); 
@@ -195,11 +196,13 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     N3[1] = n0[4]
     N4[1] = n0[5]
 
+    pols = 3;
+
     for i in 2:total_steps
 
         # Germinant pulses at 1h and 3h
         alpha = 0;
-        if (i >=1/dt*3600 && i <= 1/dt*3781) || (i >=1/dt*10801 && i <= 1/dt*10980)
+        if (i >=1/dt*3600 && i <= 1/dt*3600+pols) || (i >=1/dt*10800 && i <= 1/dt*10800+pols)|| (i >=1/dt*18000 && i <= 1/dt*18000+pols)
             alpha = alpha_g
         end
 
@@ -245,6 +248,7 @@ function spores_states_bin(N_tot, dt, t_tot, p)
             N2[i]=0;
         end
 
+        K_i = Ki[i-1];
         V_k = V_k0*log(abs(K_e/K_i))
         # ODE system
         V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
@@ -254,7 +258,6 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     return solution_bin(collect(0:dt:t_tot),V,Ke,Ki,N4)
 end
 #--------------------------------------------------------------------------------------------------------det 2 
-alpha=0;
 function channel_states_markov(N_tot, dt, t_tot, p)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
     V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
@@ -432,18 +435,35 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     print("mar_avg: "*string(avg))
     return solution_mar(collect(0:dt:t_tot),V,Ke,Ki,N4,N0,N1,N2,N3,changes)
 end
-alpha=0;
 # -----------------------------------------------------------Simulations
-N_tot = 500;
-dt = 0.5e-4;
-dt_markov=0.5e-4;
-t_tot = 14400;
-myrange = 1:100:Int(round(t_tot/dt));
+N_tot = 1000;
+dt = 0.5e-3;
+# dt_markov=0.5e-4;
+t_tot = 21600;
+myrange_bin = 1:1000:Int(round(t_tot/dt));
 
 # Binomial simulation
 sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
+myrange_bin = 1:1000:length(sol_bin.t)
 
 # Markov simulation
-u₀ = @SVector rand(11);
-tspan = (0, 14400);
-sol_mar = spores_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+# u₀ = @SVector rand(11);
+# tspan = (0, 14400);
+# sol_mar = spores_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
+
+# Plots
+f_v=plot(sol_bin.t[myrange_bin],sol_bin.V[myrange_bin], label = "V",xlabel="t (s)", 
+ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
+
+# plot!(xaxis="hores", xticks=0:(h/3600):1000)
+k_i0 = 300;
+fig_v=plot(sol_bin.t[myrange_bin],sol_bin.Ki[myrange_bin],label="K_i",xlabel="t (s)", 
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" s")
+plot!(sol_bin.t[myrange_bin],sol_bin.Ke[myrange_bin],label="K_e",xlabel="t (s)",
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
+
+# plot(sol_bin.t[myrange_bin],sol_bin.u[4,(myrange_bin)],label="n",ylabel="fraction of open subunits")
+
+savefig(f_v,"V_ki"*string(k_i0)*"_bin")
+savefig(f_v,"V_zoom_ki"*string(k_i0)*"_bin")
+savefig(fig_conc,"conc_ki"*string(k_i0)*"_polsos"*string(pols)*"s"*"_bin")
