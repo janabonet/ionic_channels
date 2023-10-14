@@ -38,41 +38,41 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     u[:,1] .= u0
     pols=3
     p[22]=0;
-    @inbounds for i in 1:Int(3600/h)
+    for i in 1:Int(60/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=4;
     # 3780
-    @inbounds for i in Int(3600/h+1):Int((3600+pols)/h+1)
+    for i in Int(60/h+1):Int((60+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    @inbounds for i in Int((3600+pols)/h+1):Int(10800/h+1)
+    for i in Int((60+pols)/h+1):Int(180/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=3.4;
     # 10980
-    @inbounds for i in Int(10800/h+1):Int((10800+pols)/h+1)
+    for i in Int(180/h+1):Int((180+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    @inbounds for i in Int((10800+pols)/h+1):Int(18000/h+1)
+    for i in Int((180+pols)/h+1):Int(300/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # 18180
-    @inbounds for i in Int(18000/h+1):Int((18000+pols)/h+1)
+    for i in Int(300/h+1):Int((300+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
     p[22]=0;
-    @inbounds for i in Int((18000+pols)/h+1):n
+    for i in Int((300+pols)/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
     end
     return solution_euler(t,u,alph)
@@ -85,27 +85,27 @@ struct solution_euler
 end
 
 
-struct solution_bin
-    t::Vector{Float64}
-    V::Vector{Float64}
-    Ke::Vector{Float64}
-    Ki::Vector{Float64}
-    N4::Vector{Float64}
-end
+# struct solution_bin
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     Ke::Vector{Float64}
+#     Ki::Vector{Float64}
+#     N4::Vector{Float64}
+# end
 
-struct solution_mar
-    t::Vector{Float64}
-    V::Vector{Float64}
-    Ke::Vector{Float64}
-    Ki::Vector{Float64}
-    N4::Vector{Float64}
+# struct solution_mar
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     Ke::Vector{Float64}
+#     Ki::Vector{Float64}
+#     N4::Vector{Float64}
 
-    N0::Vector{Float64}
-    N1::Vector{Float64}
-    N2::Vector{Float64}
-    N3::Vector{Float64}
-    changes::Vector{Float64}
-end
+#     N0::Vector{Float64}
+#     N1::Vector{Float64}
+#     N2::Vector{Float64}
+#     N3::Vector{Float64}
+#     changes::Vector{Float64}
+# end
 #-------------------------------------------------------------- deterministic, model
 function spores_hh_det(u,p,t)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
@@ -136,8 +136,8 @@ V_0=V_k0*log(k_e0/K_wt)
 #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
 # u₀_det=[V_0,k_e0,K_wt,rand()];
 u₀_det=[V_0wt,k_e0,k_i0,0.0];
-tspan = (0,21600);
-t_tot=21600;
+tspan = (0,360);
+t_tot=360;
 # t_tot=30;
 h_det = 0.5e-3;
 myrange_det=1:100:Int(round(t_tot/h_det));
@@ -155,7 +155,7 @@ ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(
 plot!(sol_det.t[myrange_det],sol_det.u[2,(myrange_det)],label="K_e",xlabel="t (s)",
 ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
 
-# plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
+plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
 
 savefig(f_v,"V_ki"*string(k_i0))
 savefig(f_v,"V_zoom_ki"*string(k_i0))
