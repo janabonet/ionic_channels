@@ -27,7 +27,7 @@ alpha = 0; # germinant not present
 
 p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
 V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha];
-pols=10;
+pols=1;
 
 struct solution_bin
     t::Vector{Float64}
@@ -49,6 +49,7 @@ function spores_states_bin(N_tot, dt, t_tot, p)
 
     # integration Parameters
     total_steps = Int(round(t_tot/dt+1));
+    # total_steps = 2000;
     # iniciar vectors
     V = zeros(total_steps)
     Ke=zeros(total_steps)
@@ -73,13 +74,23 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     N2[1] = 0;
     N3[1] = 0;
     N4[1] = 0;
+<<<<<<< HEAD
     pols = 10;
+=======
+    pols = 1;
+
+    for i in 2:total_steps
+>>>>>>> fa6fd4624d164213fba5ea73f559d9cf09d986f9
 
     for i in 2:total_steps
         # Germinant pulses at 1h and 3h
         alpha = 0;
+<<<<<<< HEAD
         if (i >=1/dt*3600 && i <= 1/dt*3600+pols) || (i >=1/dt*10800 && i <= 1/dt*10800+pols)|| (i >=1/dt*18000 && i <= 1/dt*18000+pols)
         # if (i >=1/dt*3600 && i <= 1/dt*3600+pols)
+=======
+        if (i >=1/dt*60 && i <= 1/dt*(60+pols)) || (i >=1/dt*180 && i <= 1/dt*180+pols)|| (i >=1/dt*300 && i <= 1/dt*300+pols)
+>>>>>>> fa6fd4624d164213fba5ea73f559d9cf09d986f9
             alpha = alpha_g
             alphas[i] = alpha_g;
         end
@@ -134,20 +145,35 @@ function spores_states_bin(N_tot, dt, t_tot, p)
         end
 
         K_i = Ki[i-1];
+<<<<<<< HEAD
         # V_k = V_k0*log(abs(K_e/K_i))
         # # ODE system
         # V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
         # Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1]^4 * (V[i-1] - V_k) + F * g_n * N4[i-1]^4 * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
         # Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1]^4 * (V[i-1] - V_n) - F * g_n * N4[i-1]^4 * (V[i-1] - V_n) )
+=======
+        V_k = V_k0*log(K_e/K_i)
+        # ODE system
+        V[i] = V[i-1] + dt * (-g_k * N4[i-1] * (V[i-1] - V_k) - g_n * N4[i-1] * (V[i-1] - V_n))
+        Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1] * (V[i-1] - V_k) + F * g_n * N4[i-1] * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
+        Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1] * (V[i-1] - V_k) - F * g_n * N4[i-1] * (V[i-1] - V_n) )
+>>>>>>> fa6fd4624d164213fba5ea73f559d9cf09d986f9
     end
     return solution_bin(collect(0:dt:t_tot),V,Ke,Ki,alphas,N0,N1,N2,N3,N4)
 end
 
 # -----------------------------------------------------------Simulations
+<<<<<<< HEAD
 N_tot = 1000;
 dt = 0.005;
 t_tot = 21600;
 myrange_bin = 1:1000:Int(round(t_tot/dt));
+=======
+N_tot = 50;
+dt = 0.5e-4;
+t_tot = 360;
+myrange_bin = 50:1000:Int(round(80/dt));
+>>>>>>> fa6fd4624d164213fba5ea73f559d9cf09d986f9
 
 # Binomial simulation
 sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
@@ -155,8 +181,8 @@ sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
 
 # Plots
 k_i0 = 300;
-# f_v=plot(sol_bin.t[myrange_bin],sol_bin.V[myrange_bin], label = "V",xlabel="t (s)", 
-# ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
+f_v=plot(sol_bin.t[myrange_bin],sol_bin.V[myrange_bin], label = "V",xlabel="t (s)", 
+ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
 
 # plot!(xaxis="hores", xticks=0:(h/3600):1000
 fig_conc=plot(sol_bin.t[myrange_bin],sol_bin.Ki[myrange_bin],label="K_i",xlabel="t (s)", 
@@ -164,22 +190,25 @@ ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(
 plot!(sol_bin.t[myrange_bin],sol_bin.Ke[myrange_bin],label="K_e",xlabel="t (s)",
 ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
 
-plot(sol_bin.t[myrange_bin],sol_bin.N0[myrange_bin],label="N0",
+# fig ns
+fig_ns=plot(sol_bin.t[myrange_bin],sol_bin.N0[myrange_bin],label="N0",
 xlabel="t (s)",title="Ns")
-plot(sol_bin.t[myrange_bin],sol_bin.N1[myrange_bin],label="N1",
+plot!(sol_bin.t[myrange_bin],sol_bin.N1[myrange_bin],label="N1",
 xlabel="t (s)",title="Ns")
+plot!(sol_bin.t[myrange_bin],sol_bin.N2[myrange_bin],label="N2",
+xlabel="t (s)",title="Ns")
+plot!(sol_bin.t[myrange_bin],sol_bin.N3[myrange_bin],label="N3",
+xlabel="t (s)",title="Ns")
+plot!(sol_bin.t[myrange_bin],sol_bin.N4[myrange_bin],label="N4",
+xlabel="t (s)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" s",
+xlimits=(50,80))
 
-plot(sol_bin.t[myrange_bin],sol_bin.N2[myrange_bin],label="N2",
-xlabel="t (s)",title="Ns")
-plot(sol_bin.t[myrange_bin],sol_bin.N3[myrange_bin],label="N3",
-xlabel="t (s)",title="Ns")
-plot(sol_bin.t[myrange_bin],sol_bin.N4[myrange_bin],label="N4",
-xlabel="t (s)",title="Ns")
 
-plot(sol_bin.t[myrange_bin],sol_bin.alphas[myrange_bin],label=L"\alpha",
-xlabel="t (s)",title="alpha")
-# plot(sol_bin.t[myrange_bin],sol_bin.u[4,(myrange_bin)],label="n",ylabel="fraction of open subunits")
+savefig(f_v,"v"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
 
-# savefig(f_v,"V_ki"*string(k_i0)*"_bin")
-# savefig(f_v,"V_zoom_ki"*string(k_i0)*"_bin")
-# savefig(fig_conc,"conc_ki"*string(k_i0)*"_polsos"*string(pols)*"s"*"_bin")
+savefig(fig_conc,"conc"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
+savefig(fig_conczoom,"conczoom"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
+
+
+savefig(fig_ns,"ns"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
+savefig(fig_ns_zoom,"nszoon"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))

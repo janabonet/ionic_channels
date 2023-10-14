@@ -38,42 +38,43 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     u[:,1] .= u0
     pols=3
     p[22]=0;
-    @inbounds for i in 1:Int(3600/h)
+    for i in 1:Int(60/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=4;
     # 3780
-    @inbounds for i in Int(3600/h+1):Int((3600+pols)/h+1)
+    for i in Int(60/h+1):Int((60+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    @inbounds for i in Int((3600+pols)/h+1):Int(10800/h+1)
+    for i in Int((60+pols)/h+1):Int(180/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
     # p[22]=3.4;
     # 10980
-    @inbounds for i in Int(10800/h+1):Int((10800+pols)/h+1)
+    for i in Int(180/h+1):Int((180+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=0;
-    @inbounds for i in Int((10800+pols)/h+1):Int(18000/h+1)
+    for i in Int((180+pols)/h+1):Int(300/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
         alph[i] = p[22]
     end
     p[22]=alpha_g;
-    # 18180
-    @inbounds for i in Int(18000/h+1):Int((18000+pols)/h+1)
+    for i in Int(300/h+1):Int((300+pols)/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     p[22]=0;
-    @inbounds for i in Int((18000+pols)/h+1):n
+    for i in Int((300+pols)/h+1):n
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
+        alph[i] = p[22]
     end
     return solution_euler(t,u,alph)
 end
@@ -85,27 +86,108 @@ struct solution_euler
 end
 
 
-struct solution_bin
-    t::Vector{Float64}
-    V::Vector{Float64}
-    Ke::Vector{Float64}
-    Ki::Vector{Float64}
-    N4::Vector{Float64}
+# struct solution_bin
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     Ke::Vector{Float64}
+#     Ki::Vector{Float64}
+#     N4::Vector{Float64}
+# end
+
+# struct solution_mar
+#     t::Vector{Float64}
+#     V::Vector{Float64}
+#     Ke::Vector{Float64}
+#     Ki::Vector{Float64}
+#     N4::Vector{Float64}
+
+#     N0::Vector{Float64}
+#     N1::Vector{Float64}
+#     N2::Vector{Float64}
+#     N3::Vector{Float64}
+#     changes::Vector{Float64}
+# end
+# ---------------------------------------------------------------------------------------- deterministic, states
+function spores_hh_dets(u,p,t)
+    g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
+    V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha = p;
+    V = u[1]
+    K_e = u[2]
+    K_i = u[3]
+    n0 = u[4]
+    n1 = u[5]
+    n2 = u[6]
+    n3 = u[7]
+    n4 = u[8]
+
+    # Nernst potential
+    V_k = V_k0*log((K_e/K_i))
+
+    #Dynamical system
+    dV = -g_k * n4 * (V - V_k) - g_n * n4 * (V - V_n)
+    dK_e = F * g_k * n4 * (V - V_k) + F * g_n * n4 * (V - V_n) - gamma_e * (K_e - K_m)
+    dK_i = -F * g_k * n4 * (V - V_k) - F * g_n * n4 * (V - V_n) 
+
+    dn0 = -4 * alpha *n0 + beta * n1
+    dn1 =  - (3 * alpha + beta) * n1 + 4*alpha*n0+2*beta*n2
+    dn2 = - (2*alpha + 2* beta)*n2 + 3*alpha*n1 + 3*beta*n3
+    dn3 = -(alpha+3*beta)*n3 + 2*alpha*n2 + 4*beta*n4
+    dn4 = -4*beta*n4 + alpha*n3
+
+    return [dV,dK_e,dK_i,dn0,dn1,dn2,dn3,dn4]
 end
 
-struct solution_mar
-    t::Vector{Float64}
-    V::Vector{Float64}
-    Ke::Vector{Float64}
-    Ki::Vector{Float64}
-    N4::Vector{Float64}
+k_e0=K_m; #0,100,200,400
+nd=Normal(K_wt,sigma_wt); # Distribució normal per la concentració intracelular
+# k_i0=rand(nd);
+k_i0 = 300;
+V_0=V_k0*log(k_e0/K_wt) 
+#calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
+u₀_det=[V_0wt,k_e0,k_i0,1.0,0.0,0.0,0.0,0.0];
+tspan = (0,360);
+t_tot=360;
+# t_tot=30;
+h_det = 0.5e-3;
+myrange_dets=1:100:Int(round(t_tot/h_det));
+sol_dets = euler(spores_hh_dets, u₀_det, p, tspan, h_det);
 
-    N0::Vector{Float64}
-    N1::Vector{Float64}
-    N2::Vector{Float64}
-    N3::Vector{Float64}
-    changes::Vector{Float64}
-end
+# Plots
+f_alph = plot(sol_dets.t[myrange_dets],sol_dets.alph[myrange_dets])
+
+f_v=plot(sol_dets.t[myrange_dets],sol_dets.u[1,(myrange_dets)], label = "V",xlabel="t (min)", 
+ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
+
+# plot!(xaxis="hores", xticks=0:(h/3600):1000)
+fig_conczoom=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label="K_i",xlabel="t (min)", 
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
+fig_conc=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label="K_i",xlabel="t (min)", 
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[2,(myrange_dets)],label="K_e",xlabel="t (min)", 
+ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
+
+
+fig_ns = plot(sol_dets.t[myrange_dets],sol_dets.u[4,(myrange_dets)],label="n0",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label="n1",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label="n2",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label="n3",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label="n4",ylabel="fraction of open subunits")
+fig_nszoom = plot(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label="n1",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label="n2",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label="n3",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label="n4",ylabel="fraction of open subunits",
+xlimits=(50,80))
+
+
+
+savefig(f_v,"v_det_ki"*string(k_i0)*"_polsos"*string(pols))
+
+savefig(fig_conc,"conc_det_ki"*string(k_i0)*"_polsos"*string(pols))
+savefig(fig_conczoom,"conczoom_det_ki"*string(k_i0)*"_polsos"*string(pols))
+
+
+savefig(fig_ns,"ns_det_ki"*string(k_i0)*"_polsos"*string(pols))
+savefig(fig_ns_zoom,"nszoon_det_ki"*string(k_i0)*"_polsos"*string(pols))
+
 #-------------------------------------------------------------- deterministic, model
 function spores_hh_det(u,p,t)
     g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
@@ -136,8 +218,8 @@ V_0=V_k0*log(k_e0/K_wt)
 #calcul del potencial de nernst per posar-lo com c.i. del potencial de membrana
 # u₀_det=[V_0,k_e0,K_wt,rand()];
 u₀_det=[V_0wt,k_e0,k_i0,0.0];
-tspan = (0,21600);
-t_tot=21600;
+tspan = (0,360);
+t_tot=360;
 # t_tot=30;
 h_det = 0.5e-3;
 myrange_det=1:100:Int(round(t_tot/h_det));
@@ -155,11 +237,13 @@ ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(
 plot!(sol_det.t[myrange_det],sol_det.u[2,(myrange_det)],label="K_e",xlabel="t (s)",
 ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
 
-# plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
+plot(sol_det.t[myrange_det],sol_det.u[4,(myrange_det)],label="n",ylabel="fraction of open subunits")
+
 
 savefig(f_v,"V_ki"*string(k_i0))
 savefig(f_v,"V_zoom_ki"*string(k_i0))
 savefig(fig_conc,"conc_ki"*string(k_i0)*"_polsos"*string(pols)*"s")
+
 
 # ---------------------------------------------------------------------------------------- binomial
 function spores_states_bin(N_tot, dt, t_tot, p)
@@ -436,34 +520,3 @@ function channel_states_markov(N_tot, dt, t_tot, p)
     return solution_mar(collect(0:dt:t_tot),V,Ke,Ki,N4,N0,N1,N2,N3,changes)
 end
 # -----------------------------------------------------------Simulations
-N_tot = 1000;
-dt = 0.5e-3;
-# dt_markov=0.5e-4;
-t_tot = 21600;
-myrange_bin = 1:1000:Int(round(t_tot/dt));
-
-# Binomial simulation
-sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
-myrange_bin = 1:1000:length(sol_bin.t)
-
-# Markov simulation
-# u₀ = @SVector rand(11);
-# tspan = (0, 14400);
-# sol_mar = spores_states_markov(N_tot, dt_markov, t_tot, p); #markov solution
-
-# Plots
-f_v=plot(sol_bin.t[myrange_bin],sol_bin.V[myrange_bin], label = "V",xlabel="t (s)", 
-ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
-
-# plot!(xaxis="hores", xticks=0:(h/3600):1000)
-k_i0 = 300;
-fig_v=plot(sol_bin.t[myrange_bin],sol_bin.Ki[myrange_bin],label="K_i",xlabel="t (s)", 
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" s")
-plot!(sol_bin.t[myrange_bin],sol_bin.Ke[myrange_bin],label="K_e",xlabel="t (s)",
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0))
-
-# plot(sol_bin.t[myrange_bin],sol_bin.u[4,(myrange_bin)],label="n",ylabel="fraction of open subunits")
-
-savefig(f_v,"V_ki"*string(k_i0)*"_bin")
-savefig(f_v,"V_zoom_ki"*string(k_i0)*"_bin")
-savefig(fig_conc,"conc_ki"*string(k_i0)*"_polsos"*string(pols)*"s"*"_bin")
