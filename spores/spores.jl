@@ -154,28 +154,29 @@ sol_dets = euler(spores_hh_dets, u₀_det, p, tspan, h_det);
 # Plots
 f_alph = plot(sol_dets.t[myrange_dets],sol_dets.alph[myrange_dets])
 
-f_v=plot(sol_dets.t[myrange_dets],sol_dets.u[1,(myrange_dets)], label = "V",xlabel="t (min)", 
-ylabel="Membrane potential (mV)",title="k_i0 = "*string(k_i0))
+f_v=plot(sol_dets.t[myrange_dets],sol_dets.u[1,(myrange_dets)], label = L"V",xlabel=L"t\;(min)", 
+ylabel=L"Membrane \; potential (mV)",title="k_i0 = "*string(k_i0))
 
 # plot!(xaxis="hores", xticks=0:(h/3600):1000)
-fig_conczoom=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label="K_i",xlabel="t (min)", 
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
-fig_conc=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label="K_i",xlabel="t (min)", 
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[2,(myrange_dets)],label="K_e",xlabel="t (min)", 
-ylabel = "Concentration (mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
+fig_conczoom=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label=L"K_i",xlabel=L"t (min)", 
+ylabel =L"Concentration\;(mM)",title="k_i0 = "*string(k_i0)*"_polsos = "*string(pols)*" min")
+fig_conc=plot(sol_dets.t[myrange_dets],sol_dets.u[3,(myrange_dets)],label=L"K_i",xlabel=L"t\;(min)", 
+ylabel = L"Concentration\;(mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*"min")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[2,(myrange_dets)],label=L"K_e",xlabel=L"t\;(min)", 
+ylabel = L"Concentration\;(mM)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" min")
 
 
-fig_ns = plot(sol_dets.t[myrange_dets],sol_dets.u[4,(myrange_dets)],label="n0",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label="n1",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label="n2",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label="n3",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label="n4",ylabel="fraction of open subunits")
-fig_nszoom = plot(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label="n1",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label="n2",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label="n3",ylabel="fraction of open subunits")
-plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label="n4",ylabel="fraction of open subunits",
-xlimits=(50,80))
+fig_ns = plot(sol_dets.t[myrange_dets],sol_dets.u[4,(myrange_dets)],label=L"n0",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label=L"n1",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label=L"n2",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label=L"n3",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label=L"n4",ylabel=L"Fraction \;of \;open \;subunits",
+xlabel=L"t\;(min)")
+fig_nszoom = plot(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label=L"n1",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label=L"n2",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label=L"n3",ylabel="fraction of open subunits")
+plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label=L"n4",ylabel=L"Fraction\; of \;open \;subunits",
+xlimits=(50,80),xlabel=L"Number \; of \; open \; channels")
 
 
 
@@ -186,7 +187,7 @@ savefig(fig_conczoom,"conczoom_det_ki"*string(k_i0)*"_polsos"*string(pols))
 
 
 savefig(fig_ns,"ns_det_ki"*string(k_i0)*"_polsos"*string(pols))
-savefig(fig_ns_zoom,"nszoon_det_ki"*string(k_i0)*"_polsos"*string(pols))
+savefig(fig_nszoom,"nszoon_det_ki"*string(k_i0)*"_polsos"*string(pols))
 
 #-------------------------------------------------------------- deterministic, model
 function spores_hh_det(u,p,t)
