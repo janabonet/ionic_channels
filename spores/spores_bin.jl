@@ -74,11 +74,12 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     N3[1] = 0;
     N4[1] = 0;
     pols = 10;
-    for i in 2:total_steps
 
+    for i in 2:total_steps
         # Germinant pulses at 1h and 3h
         alpha = 0;
         if (i >=1/dt*3600 && i <= 1/dt*3600+pols) || (i >=1/dt*10800 && i <= 1/dt*10800+pols)|| (i >=1/dt*18000 && i <= 1/dt*18000+pols)
+        # if (i >=1/dt*3600 && i <= 1/dt*3600+pols)
             alpha = alpha_g
             alphas[i] = alpha_g;
         end
@@ -133,24 +134,24 @@ function spores_states_bin(N_tot, dt, t_tot, p)
         end
 
         K_i = Ki[i-1];
-        V_k = V_k0*log(abs(K_e/K_i))
-        # ODE system
-        V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
-        Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1]^4 * (V[i-1] - V_k) + F * g_n * N4[i-1]^4 * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
-        Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1]^4 * (V[i-1] - V_n) - F * g_n * N4[i-1]^4 * (V[i-1] - V_n) )
+        # V_k = V_k0*log(abs(K_e/K_i))
+        # # ODE system
+        # V[i] = V[i-1] + dt * (-g_k * N4[i-1]^4 * (V[i-1] - V_k) - g_n * N4[i-1]^4 * (V[i-1] - V_n))
+        # Ke[i] = Ke[i-1] + dt * (F * g_k * N4[i-1]^4 * (V[i-1] - V_k) + F * g_n * N4[i-1]^4 * (V[i-1] - V_n) - gamma_e * (Ke[i-1] - K_m))
+        # Ki[i] = Ki[i-1] + dt * (-F * g_k * N4[i-1]^4 * (V[i-1] - V_n) - F * g_n * N4[i-1]^4 * (V[i-1] - V_n) )
     end
     return solution_bin(collect(0:dt:t_tot),V,Ke,Ki,alphas,N0,N1,N2,N3,N4)
 end
 
 # -----------------------------------------------------------Simulations
 N_tot = 1000;
-dt = 0.5e-2;
+dt = 0.005;
 t_tot = 21600;
 myrange_bin = 1:1000:Int(round(t_tot/dt));
 
 # Binomial simulation
 sol_bin = spores_states_bin(N_tot, dt, t_tot, p);
-myrange_bin = 1:1000:length(sol_bin.t);
+# myrange_bin = 1:1000:length(sol_bin.t);
 
 # Plots
 k_i0 = 300;
