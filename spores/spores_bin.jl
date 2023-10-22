@@ -27,7 +27,7 @@ alpha = 0; # germinant not present
 
 p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
 V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha];
-pols=1;
+pols=3;
 
 struct solution_bin
     t::Vector{Float64}
@@ -74,7 +74,7 @@ function spores_states_bin(N_tot, dt, t_tot, p)
     N2[1] = 0;
     N3[1] = 0;
     N4[1] = 0;
-    pols = 1;
+    pols = 3;
 
     for i in 2:total_steps
         # Germinant pulses at 1h and 3h
@@ -144,7 +144,7 @@ function spores_states_bin(N_tot, dt, t_tot, p)
 end
 
 # -----------------------------------------------------------Simulations
-N_tot = 1000;
+N_tot = 50;
 dt = 0.5e-4;
 t_tot = 360;
 myrange_bin = 1:1000:Int(round(t_tot/dt));
@@ -194,7 +194,7 @@ xlimits=(50,80),ylabel=L"Number\;of \;open \;channels")
 savefig(f_v,"v"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
 
 savefig(fig_conc,"conc"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
-savefig(fig_conczoom,"conczoom"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
+# savefig(fig_conczoom,"conczoom"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
 
 
 savefig(fig_ns,"ns"*string(N_tot)*"_bin_ki"*string(k_i0)*"_polsos"*string(pols))
