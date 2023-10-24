@@ -178,7 +178,7 @@ plot!(sol_bin.t[myrange_bin],sol_bin.N3[myrange_bin],label=L"N3",
 xlabel="t (s)",title="Ns")
 plot!(sol_bin.t[myrange_bin],sol_bin.N4[myrange_bin],label=L"N4",
 xlabel=L"t \;(s)",title="k_i0 = "*string(k_i0)*", polsos = "*string(pols)*" s",
-ylabel=L"Number\;of \;open \;channels")
+ylabel=L"Number\;of \;open \;channels",xlimits=(50,80))
 
 fig_nszoom= plot(sol_bin.t[myrange_bin],sol_bin.N1[myrange_bin],label=L"N1",
 xlabel=L"t\; (s)",title="Ns")

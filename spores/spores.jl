@@ -171,7 +171,7 @@ plot!(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label=L"n1",ylabel="
 plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label=L"n2",ylabel="fraction of open subunits")
 plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label=L"n3",ylabel="fraction of open subunits")
 plot!(sol_dets.t[myrange_dets],sol_dets.u[8,(myrange_dets)],label=L"n4",ylabel=L"Fraction \;of \;open \;subunits",
-xlabel=L"t\;(min)")
+xlabel=L"t\;(min)",xlimits=(50,80))
 fig_nszoom = plot(sol_dets.t[myrange_dets],sol_dets.u[5,(myrange_dets)],label=L"n1",ylabel="fraction of open subunits")
 plot!(sol_dets.t[myrange_dets],sol_dets.u[6,(myrange_dets)],label=L"n2",ylabel="fraction of open subunits")
 plot!(sol_dets.t[myrange_dets],sol_dets.u[7,(myrange_dets)],label=L"n3",ylabel="fraction of open subunits")
