@@ -27,7 +27,8 @@ alpha = 0; # germinant not present
 
 p = [g_k, g_kq, g_n, g_nq, V_k0, V_n, alpha_g, beta, V_0wt, V_0ktrc,
 V_0yugO, gamma_e, F, K_m, K_s, K_wt, K_ktrc, K_yugO, sigma_wt, sigma_ktrc, sigma_yugO,alpha];
-pols=3;
+
+pols=3; #durada del pols (s'ha de canviar també dins la funció)
 
 function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     tspan::Tuple{Int64,Int64}, h::Float64)
@@ -36,7 +37,7 @@ function euler(f::Function, u0::Vector{Float64}, p::Vector{Float64},
     u = zeros(length(u0), n+1)
     alph =  zeros(length(u))
     u[:,1] .= u0
-    pols=3
+    pols=3 # durada del pols
     p[22]=0;
     for i in 1:Int(60/h)
         u[:,i+1] = u[:,i] + h*f(u[:,i],p,t[i])
